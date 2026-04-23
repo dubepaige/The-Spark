@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(claude mcp *)",
+      "Read(//usr/local/bin/**)",
+      "Read(//Users/paige/.nvm/versions/**)",
+      "Bash(npx claude *)"
+    ]
+  }
+}
