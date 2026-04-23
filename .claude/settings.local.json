@@ -7,7 +7,13 @@
       "Bash(npx claude *)",
       "mcp__Claude_Preview__preview_start",
       "Bash(gh api *)",
-      "Bash(gh auth *)"
+      "Bash(gh auth *)",
+      "WebFetch(domain:esm.sh)",
+      "WebFetch(domain:cdn.jsdelivr.net)",
+      "WebFetch(domain:dubepaige.github.io)",
+      "Bash(curl -s \"https://esm.sh/@supabase/auth-js@2\")",
+      "Bash(curl -s \"https://esm.sh/@supabase/auth-js@2.104.1/es2022/auth-js.mjs\")",
+      "Bash(curl -s \"https://esm.sh/@supabase/supabase-js@2.104.1/es2022/supabase-js.mjs\")"
     ]
   }
 }

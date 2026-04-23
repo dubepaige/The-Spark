@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TheSlap.com</title>
+  <title>The Spark</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/main.css" />
@@ -14,15 +14,15 @@
   <header class="site-header">
     <div class="header-inner">
       <div class="logo">
-        <span class="logo-the">the</span><span class="logo-slap">Slap</span><span class="logo-dot">.com</span>
+        <span class="logo-the">The</span> <span class="logo-slap">Spark</span><span class="logo-bolt">⚡</span>
       </div>
       <nav class="header-nav">
-        <a href="#" class="nav-link active">Feed</a>
-        <a href="#" class="nav-link">Videos</a>
-        <a href="#" class="nav-link">Profiles</a>
+        <a href="#feed"     class="nav-link active" data-page="feed">Feed</a>
+        <a href="#videos"   class="nav-link"         data-page="videos">Videos</a>
+        <a href="#profiles" class="nav-link"         data-page="profiles">Profiles</a>
       </nav>
       <div class="header-user" id="headerUser">
-        <button class="btn btn-login" id="loginBtn">Log In</button>
+        <button class="btn btn-login"  id="loginBtn">Log In</button>
         <button class="btn btn-signup" id="signupBtn">Sign Up</button>
       </div>
     </div>
@@ -33,20 +33,20 @@
 
     <!-- SIDEBAR -->
     <aside class="sidebar">
-      <div class="sidebar-profile" id="sidebarProfile">
+      <div class="sidebar-profile">
         <div class="profile-avatar-wrap">
           <div class="profile-avatar" id="sidebarAvatar">?</div>
         </div>
-        <div class="profile-name" id="sidebarName">Guest</div>
-        <div class="profile-handle" id="sidebarHandle">@theslap</div>
+        <div class="profile-name"   id="sidebarName">Guest</div>
+        <div class="profile-handle" id="sidebarHandle">@thespark</div>
         <div class="profile-stats">
           <div class="stat"><span class="stat-num" id="statPosts">0</span><span class="stat-label">Posts</span></div>
-          <div class="stat"><span class="stat-num" id="statLikes">0</span><span class="stat-label">Slaps</span></div>
+          <div class="stat"><span class="stat-num" id="statLikes">0</span><span class="stat-label">Sparks</span></div>
         </div>
       </div>
 
       <div class="sidebar-section">
-        <div class="sidebar-title">Who's Slappin'</div>
+        <div class="sidebar-title">Who's Sparkin'</div>
         <ul class="who-list" id="whoList">
           <li class="who-item skeleton"></li>
           <li class="who-item skeleton"></li>
@@ -55,61 +55,120 @@
       </div>
 
       <div class="sidebar-section">
-        <div class="sidebar-title">Trending Tags</div>
-        <div class="tag-cloud" id="tagCloud">
-          <span class="tag">#Hollywood Arts</span>
-          <span class="tag">#Beck</span>
-          <span class="tag">#Jade</span>
-          <span class="tag">#Tori</span>
-          <span class="tag">#Cat</span>
-          <span class="tag">#Robbie</span>
-          <span class="tag">#Andre</span>
+        <div class="sidebar-title">Moods Right Now</div>
+        <div class="tag-cloud" id="moodCloud">
+          <span class="tag">⚡ Epic</span>
+          <span class="tag">🎭 Dramatic</span>
+          <span class="tag">🎵 Musical</span>
+          <span class="tag">🤩 Awesome</span>
+          <span class="tag">😴 Bored</span>
+          <span class="tag">💅 Fabulous</span>
         </div>
       </div>
     </aside>
 
-    <!-- MAIN FEED -->
-    <main class="feed-area">
+    <!-- PAGES -->
+    <main class="content-area">
 
-      <!-- POST COMPOSER -->
-      <div class="composer card" id="composer">
-        <div class="composer-top">
-          <div class="composer-avatar" id="composerAvatar">?</div>
-          <textarea
-            class="composer-input"
-            id="composerInput"
-            placeholder="What's happening at Hollywood Arts?"
-            maxlength="280"
-          ></textarea>
-        </div>
-        <div class="composer-bottom">
-          <div class="composer-options">
-            <button class="composer-opt" id="addVideoBtn" title="Add video link">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-              Video
-            </button>
+      <!-- ===== FEED PAGE ===== -->
+      <div class="page" id="page-feed">
+
+        <!-- POST COMPOSER -->
+        <div class="composer card" id="composer">
+          <div class="composer-top">
+            <div class="composer-avatar" id="composerAvatar">?</div>
+            <div class="composer-fields">
+              <select class="feeling-select" id="feelingSelect">
+                <option value="">Pick a feeling…</option>
+                <option value="Awesome 🤩">Awesome 🤩</option>
+                <option value="Epic ⚡">Epic ⚡</option>
+                <option value="Excited 🎉">Excited 🎉</option>
+                <option value="Happy 😊">Happy 😊</option>
+                <option value="Fabulous 💅">Fabulous 💅</option>
+                <option value="Musical 🎵">Musical 🎵</option>
+                <option value="Creative 🎨">Creative 🎨</option>
+                <option value="Dramatic 🎭">Dramatic 🎭</option>
+                <option value="Inspired ✨">Inspired ✨</option>
+                <option value="In Love 💕">In Love 💕</option>
+                <option value="Silly 🤪">Silly 🤪</option>
+                <option value="Rebellious 😈">Rebellious 😈</option>
+                <option value="Legendary 🏆">Legendary 🏆</option>
+                <option value="Caffeinated ☕">Caffeinated ☕</option>
+                <option value="Hungry 🍕">Hungry 🍕</option>
+                <option value="Confused 🤔">Confused 🤔</option>
+                <option value="Nervous 😬">Nervous 😬</option>
+                <option value="Annoyed 🙄">Annoyed 🙄</option>
+                <option value="Tired 😪">Tired 😪</option>
+                <option value="Sad 😢">Sad 😢</option>
+                <option value="Angry 😤">Angry 😤</option>
+                <option value="Bored 😴">Bored 😴</option>
+              </select>
+              <textarea
+                class="composer-input"
+                id="composerInput"
+                placeholder="Tell everyone why…"
+                maxlength="280"
+              ></textarea>
+            </div>
           </div>
-          <div class="composer-right">
-            <span class="char-count" id="charCount">280</span>
-            <button class="btn btn-post" id="postBtn" disabled>Slap it!</button>
+          <div class="composer-bottom">
+            <div class="composer-options">
+              <button class="composer-opt" id="addVideoBtn" title="Add video link">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                Video
+              </button>
+            </div>
+            <div class="composer-right">
+              <span class="char-count" id="charCount">280</span>
+              <button class="btn btn-post" id="postBtn" disabled>Spark it!</button>
+            </div>
+          </div>
+          <div class="video-url-wrap hidden" id="videoUrlWrap">
+            <input type="url" class="video-url-input" id="videoUrlInput" placeholder="Paste YouTube URL…" />
           </div>
         </div>
-        <div class="video-url-wrap hidden" id="videoUrlWrap">
-          <input type="url" class="video-url-input" id="videoUrlInput" placeholder="Paste YouTube or video URL..." />
+
+        <!-- POSTS FEED -->
+        <div class="posts-feed" id="postsFeed">
+          <div class="loading-spinner"><div class="spinner"></div></div>
         </div>
       </div>
 
-      <!-- FEED TABS -->
-      <div class="feed-tabs">
-        <button class="feed-tab active" data-tab="all">All Slaps</button>
-        <button class="feed-tab" data-tab="videos">Videos</button>
-        <button class="feed-tab" data-tab="status">Status</button>
+      <!-- ===== VIDEOS PAGE ===== -->
+      <div class="page hidden" id="page-videos">
+        <div class="page-header-bar">
+          <h2 class="page-title">⚡ Videos</h2>
+          <p class="page-subtitle">Catch everyone's latest clips</p>
+        </div>
+        <div class="videos-grid" id="videosGrid">
+          <div class="loading-spinner"><div class="spinner"></div></div>
+        </div>
       </div>
 
-      <!-- POSTS FEED -->
-      <div class="posts-feed" id="postsFeed">
-        <div class="loading-spinner" id="feedSpinner">
-          <div class="spinner"></div>
+      <!-- ===== PROFILES PAGE ===== -->
+      <div class="page hidden" id="page-profiles">
+        <div class="page-header-bar">
+          <h2 class="page-title">✨ Profiles</h2>
+          <p class="page-subtitle">Everyone on The Spark</p>
+        </div>
+        <div class="profiles-grid" id="profilesGrid">
+          <div class="loading-spinner"><div class="spinner"></div></div>
+        </div>
+
+        <!-- Profile detail panel -->
+        <div class="profile-detail hidden" id="profileDetail">
+          <button class="btn-back" id="backToProfiles">← Back to Profiles</button>
+          <div class="profile-detail-header card">
+            <div class="profile-detail-avatar" id="detailAvatar"></div>
+            <div class="profile-detail-info">
+              <div class="profile-detail-name" id="detailName"></div>
+              <div class="profile-detail-handle" id="detailHandle"></div>
+              <div class="profile-detail-stats">
+                <span id="detailPostCount">0</span> posts
+              </div>
+            </div>
+          </div>
+          <div class="posts-feed" id="profilePostsFeed"></div>
         </div>
       </div>
 
@@ -123,14 +182,14 @@
 
       <div class="modal-tabs">
         <button class="modal-tab active" id="tabLogin">Log In</button>
-        <button class="modal-tab" id="tabSignup">Sign Up</button>
+        <button class="modal-tab"        id="tabSignup">Sign Up</button>
       </div>
 
       <!-- Login Form -->
       <form class="auth-form" id="loginForm">
         <div class="form-group">
           <label>Username</label>
-          <input type="text" id="loginUsername" placeholder="ToriVega" required autocomplete="username" />
+          <input type="text" id="loginUsername" placeholder="paigedube" required autocomplete="username" />
         </div>
         <div class="form-group">
           <label>Password</label>
@@ -167,12 +226,12 @@
           <input type="password" id="signupPasswordConfirm" placeholder="••••••••" required autocomplete="new-password" />
         </div>
         <div class="form-error hidden" id="signupError"></div>
-        <button type="submit" class="btn btn-post full-width">Join TheSlap!</button>
+        <button type="submit" class="btn btn-post full-width">Join The Spark!</button>
       </form>
     </div>
   </div>
 
-  <!-- POST TEMPLATE (hidden, cloned by JS) -->
+  <!-- POST TEMPLATE -->
   <template id="postTemplate">
     <article class="post card">
       <div class="post-header">
@@ -184,15 +243,18 @@
         </div>
       </div>
       <div class="post-body">
-        <p class="post-text"></p>
+        <div class="post-feeling"></div>
+        <p class="post-explanation"></p>
         <div class="post-video hidden">
-          <iframe class="video-embed" frameborder="0" allowfullscreen></iframe>
+          <iframe class="video-embed" frameborder="0" allowfullscreen
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
+          </iframe>
         </div>
       </div>
       <div class="post-actions">
         <button class="action-btn slap-btn">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
-          <span class="slap-count">0</span> Slaps
+          <span class="slap-count">0</span> Sparks
         </button>
         <button class="action-btn comment-btn">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
@@ -202,7 +264,7 @@
       <div class="comments-section hidden">
         <div class="comments-list"></div>
         <div class="comment-composer">
-          <input type="text" class="comment-input" placeholder="Leave a comment..." maxlength="200" />
+          <input type="text" class="comment-input" placeholder="Leave a comment…" maxlength="200" />
           <button class="btn btn-comment-submit">Post</button>
         </div>
       </div>

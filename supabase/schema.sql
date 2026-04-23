@@ -16,6 +16,10 @@ alter table public.profiles add column if not exists email text;
 alter table public.profiles add column if not exists birthday date;
 alter table public.profiles add column if not exists full_name text;
 
+-- Add feeling column to posts (run this in SQL editor if posts table already exists)
+alter table public.posts add column if not exists feeling text;
+alter table public.posts alter column content drop not null;
+
 alter table public.profiles enable row level security;
 
 create policy "Profiles are viewable by everyone"
