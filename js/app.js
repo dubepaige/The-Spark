@@ -124,14 +124,15 @@ function setupAuthModal() {
 
   document.getElementById('loginForm').addEventListener('submit', async e => {
     e.preventDefault()
-    const email = document.getElementById('loginEmail').value
+    const username = document.getElementById('loginUsername').value.trim().toLowerCase()
     const password = document.getElementById('loginPassword').value
     const errEl = document.getElementById('loginError')
     errEl.classList.add('hidden')
 
+    const email = usernameToEmail(username)
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) {
-      errEl.textContent = error.message
+      errEl.textContent = 'Invalid username or password'
       errEl.classList.remove('hidden')
     } else {
       closeModal()
@@ -141,11 +142,30 @@ function setupAuthModal() {
   document.getElementById('signupForm').addEventListener('submit', async e => {
     e.preventDefault()
     const username = document.getElementById('signupUsername').value.trim()
-    const email = document.getElementById('signupEmail').value
     const password = document.getElementById('signupPassword').value
     const errEl = document.getElementById('signupError')
     errEl.classList.add('hidden')
 
+    if (!/^[a-zA-Z0-9_]{3,30}$/.test(username)) {
+      errEl.textContent = 'Username must be 3–30 characters, letters/numbers/underscores only'
+      errEl.classList.remove('hidden')
+      return
+    }
+
+    // Check username isn't already taken
+    const { data: existing } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('username', username)
+      .maybeSingle()
+
+    if (existing) {
+      errEl.textContent = 'That username is already taken'
+      errEl.classList.remove('hidden')
+      return
+    }
+
+    const email = usernameToEmail(username.toLowerCase())
     const { error } = await supabase.auth.signUp({
       email, password,
       options: { data: { username } }
@@ -432,6 +452,10 @@ async function loadWhoList() {
 }
 
 // ===== HELPERS =====
+function usernameToEmail(username) {
+  return `${username}@theslap.users`
+}
+
 function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime()
   const m = Math.floor(diff / 60000)

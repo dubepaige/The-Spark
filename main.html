@@ -129,12 +129,12 @@
       <!-- Login Form -->
       <form class="auth-form" id="loginForm">
         <div class="form-group">
-          <label>Email</label>
-          <input type="email" id="loginEmail" placeholder="you@hollywoodarts.edu" required />
+          <label>Username</label>
+          <input type="text" id="loginUsername" placeholder="ToriVega" required autocomplete="username" />
         </div>
         <div class="form-group">
           <label>Password</label>
-          <input type="password" id="loginPassword" placeholder="••••••••" required />
+          <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password" />
         </div>
         <div class="form-error hidden" id="loginError"></div>
         <button type="submit" class="btn btn-post full-width">Log In</button>
@@ -144,15 +144,11 @@
       <form class="auth-form hidden" id="signupForm">
         <div class="form-group">
           <label>Username</label>
-          <input type="text" id="signupUsername" placeholder="ToriVega" required maxlength="30" />
-        </div>
-        <div class="form-group">
-          <label>Email</label>
-          <input type="email" id="signupEmail" placeholder="you@hollywoodarts.edu" required />
+          <input type="text" id="signupUsername" placeholder="ToriVega" required maxlength="30" autocomplete="username" />
         </div>
         <div class="form-group">
           <label>Password</label>
-          <input type="password" id="signupPassword" placeholder="Min 6 characters" required minlength="6" />
+          <input type="password" id="signupPassword" placeholder="Min 6 characters" required minlength="6" autocomplete="new-password" />
         </div>
         <div class="form-error hidden" id="signupError"></div>
         <button type="submit" class="btn btn-post full-width">Join TheSlap!</button>
