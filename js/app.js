@@ -558,13 +558,13 @@ async function handleAvatarUpload(e) {
   const file = e.target.files[0]
   if (!file || !currentUser) return
 
-  const ext  = file.name.split('.').pop()
-  const path = `${currentUser.id}.${ext}`
+  const ext  = file.name.split('.').pop().toLowerCase()
+  const path = `${currentUser.id}/avatar.${ext}`
 
   const { error } = await supabase.storage
-    .from('avatars').upload(path, file, { upsert: true })
+    .from('avatars').upload(path, file, { upsert: true, contentType: file.type })
 
-  if (error) { alert('Upload failed: ' + error.message); return }
+  if (error) { alert('Avatar upload failed: ' + error.message); return }
 
   const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
 
