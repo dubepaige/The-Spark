@@ -10,6 +10,7 @@ let currentUser    = null
 let currentProfile = null
 let activePage     = 'feed'
 let sparkedPosts   = new Set()
+let pendingFile    = null   // file selected for upload
 
 // ===== INIT =====
 async function init() {
@@ -18,21 +19,23 @@ async function init() {
 
   supabase.auth.onAuthStateChange(async (_event, session) => {
     if (session) await setUser(session.user)
-    else clearUser()
+    else         clearUser()
   })
 
   setupComposer()
   setupAuthModal()
   setupNav()
+  setupHamburger()
   await navigateTo('feed')
   await loadWhoList()
 }
 
 // ===== NAV / ROUTING =====
 function setupNav() {
-  document.querySelectorAll('.nav-link').forEach(link => {
+  document.querySelectorAll('[data-page]').forEach(link => {
     link.addEventListener('click', async e => {
       e.preventDefault()
+      closeMobileNav()
       await navigateTo(link.dataset.page)
     })
   })
@@ -41,19 +44,31 @@ function setupNav() {
 async function navigateTo(page) {
   activePage = page
 
-  // Update nav active state
-  document.querySelectorAll('.nav-link').forEach(l => {
+  document.querySelectorAll('.nav-link, .mobile-nav-link').forEach(l => {
     l.classList.toggle('active', l.dataset.page === page)
   })
 
-  // Show correct page
   document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'))
-  document.getElementById(`page-${page}`).classList.remove('hidden')
+  const pageEl = document.getElementById(`page-${page}`)
+  if (pageEl) pageEl.classList.remove('hidden')
 
-  // Load content
-  if (page === 'feed')     await loadFeed()
-  if (page === 'videos')   await loadVideos()
-  if (page === 'profiles') await loadProfiles()
+  if (page === 'feed')      await loadFeed()
+  if (page === 'videos')    await loadVideos()
+  if (page === 'profiles')  await loadProfiles()
+  if (page === 'myprofile') await loadMyProfile()
+}
+
+// ===== HAMBURGER (mobile) =====
+function setupHamburger() {
+  const btn = document.getElementById('hamburger')
+  btn.addEventListener('click', () => {
+    btn.classList.toggle('open')
+    document.getElementById('mobileNav').classList.toggle('hidden')
+  })
+}
+function closeMobileNav() {
+  document.getElementById('hamburger').classList.remove('open')
+  document.getElementById('mobileNav').classList.add('hidden')
 }
 
 // ===== AUTH =====
@@ -62,34 +77,32 @@ async function setUser(user) {
   const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
   currentProfile = data
 
+  // Show My Profile nav link
+  document.querySelectorAll('.nav-myprofile, .mobile-myprofile').forEach(el => el.classList.remove('hidden'))
+
+  // Header
   const headerUser = document.getElementById('headerUser')
+  const avatarHTML = avatarEl(currentProfile, 'header-avatar')
   headerUser.innerHTML = `
-    <div class="header-user-info">
-      <div class="header-avatar">${currentProfile?.avatar_letter || '?'}</div>
+    <div class="header-user-info" id="headerUserInfo">
+      ${avatarHTML}
       <span class="header-username">${currentProfile?.full_name || currentProfile?.username || user.email}</span>
     </div>
     <button class="btn btn-logout" id="logoutBtn">Log Out</button>
   `
   document.getElementById('logoutBtn').addEventListener('click', signOut)
+  document.getElementById('headerUserInfo').addEventListener('click', () => navigateTo('myprofile'))
 
-  const composerAvatar = document.getElementById('composerAvatar')
-  if (composerAvatar) composerAvatar.textContent = currentProfile?.avatar_letter || '?'
-
-  const sidebarAvatar = document.getElementById('sidebarAvatar')
-  const sidebarName   = document.getElementById('sidebarName')
-  const sidebarHandle = document.getElementById('sidebarHandle')
-  if (sidebarAvatar) sidebarAvatar.textContent = currentProfile?.avatar_letter || '?'
-  if (sidebarName)   sidebarName.textContent   = currentProfile?.full_name || currentProfile?.username || user.email
-  if (sidebarHandle) sidebarHandle.textContent  = `@${currentProfile?.username || 'user'}`
-
+  refreshAvatarDisplays()
   document.getElementById('postBtn').disabled = false
-
   await loadUserStats()
   await loadSparkedPosts()
 }
 
 function clearUser() {
   currentUser = null; currentProfile = null
+
+  document.querySelectorAll('.nav-myprofile, .mobile-myprofile').forEach(el => el.classList.add('hidden'))
 
   const headerUser = document.getElementById('headerUser')
   headerUser.innerHTML = `
@@ -99,20 +112,44 @@ function clearUser() {
   document.getElementById('loginBtn').addEventListener('click',  () => openModal('login'))
   document.getElementById('signupBtn').addEventListener('click', () => openModal('signup'))
 
-  const els = {
-    composerAvatar: '?', sidebarName: 'Guest',
-    sidebarHandle: '@thespark', sidebarAvatar: '?',
-    statPosts: '0', statLikes: '0',
-  }
-  Object.entries(els).forEach(([id, val]) => {
-    const el = document.getElementById(id)
-    if (el) el.textContent = val
-  })
+  setEl('composerAvatar', '?')
+  setEl('sidebarAvatar',  '?')
+  setEl('sidebarName',    'Guest')
+  setEl('sidebarHandle',  '@thespark')
+  setEl('statPosts',      '0')
+  setEl('statLikes',      '0')
   document.getElementById('postBtn').disabled = true
   sparkedPosts.clear()
 }
 
 async function signOut() { await supabase.auth.signOut() }
+
+function refreshAvatarDisplays() {
+  if (!currentProfile) return
+  const letter = currentProfile.avatar_letter || '?'
+  const url    = currentProfile.avatar_url
+
+  const applyAvatar = (el, size) => {
+    if (!el) return
+    if (url) {
+      el.innerHTML = `<img src="${url}" alt="${letter}" />`
+    } else {
+      el.textContent = letter
+    }
+    el.style.background = url ? 'none' : colorFromLetter(letter)
+  }
+
+  applyAvatar(document.getElementById('composerAvatar'))
+  applyAvatar(document.getElementById('sidebarAvatar'))
+  applyAvatar(document.getElementById('myAvatar'))
+
+  // Header avatar
+  const ha = document.querySelector('.header-avatar')
+  if (ha) {
+    ha.innerHTML = url ? `<img src="${url}" alt="${letter}" />` : letter
+    ha.style.background = url ? 'none' : colorFromLetter(letter)
+  }
+}
 
 async function loadUserStats() {
   if (!currentUser) return
@@ -120,8 +157,8 @@ async function loadUserStats() {
     supabase.from('posts').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id),
     supabase.from('slaps').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id),
   ])
-  document.getElementById('statPosts').textContent = postCount ?? 0
-  document.getElementById('statLikes').textContent = sparkCount ?? 0
+  setEl('statPosts', postCount ?? 0)
+  setEl('statLikes', sparkCount ?? 0)
 }
 
 async function loadSparkedPosts() {
@@ -135,9 +172,7 @@ function setupAuthModal() {
   document.getElementById('loginBtn')?.addEventListener('click',  () => openModal('login'))
   document.getElementById('signupBtn')?.addEventListener('click', () => openModal('signup'))
   document.getElementById('modalClose').addEventListener('click', closeModal)
-  document.getElementById('authModal').addEventListener('click', e => {
-    if (e.target === e.currentTarget) closeModal()
-  })
+  document.getElementById('authModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal() })
   document.getElementById('tabLogin').addEventListener('click',  () => switchModalTab('login'))
   document.getElementById('tabSignup').addEventListener('click', () => switchModalTab('signup'))
 
@@ -153,14 +188,11 @@ function setupAuthModal() {
       .from('profiles').select('email').eq('username', username).maybeSingle()
 
     if (lookupErr || !profile?.email) {
-      errEl.textContent = 'Invalid username or password'
-      errEl.classList.remove('hidden'); return
+      showError(errEl, 'Invalid username or password'); return
     }
     const { error } = await supabase.auth.signInWithPassword({ email: profile.email, password })
-    if (error) {
-      errEl.textContent = 'Invalid username or password'
-      errEl.classList.remove('hidden')
-    } else { closeModal() }
+    if (error) showError(errEl, 'Invalid username or password')
+    else closeModal()
   })
 
   // Signup
@@ -175,38 +207,19 @@ function setupAuthModal() {
     const errEl    = document.getElementById('signupError')
     errEl.classList.add('hidden')
 
-    if (!fullName) {
-      errEl.textContent = 'Please enter your full name'
-      errEl.classList.remove('hidden'); return
-    }
-    if (!/^[a-zA-Z0-9_]{3,30}$/.test(username)) {
-      errEl.textContent = 'Username must be 3–30 characters: letters, numbers, underscores'
-      errEl.classList.remove('hidden'); return
-    }
-    if (password !== confirm) {
-      errEl.textContent = 'Passwords do not match'
-      errEl.classList.remove('hidden'); return
-    }
-    if (!birthday) {
-      errEl.textContent = 'Please enter your birthday'
-      errEl.classList.remove('hidden'); return
-    }
+    if (!fullName)                              { showError(errEl, 'Please enter your full name'); return }
+    if (!/^[a-zA-Z0-9_]{3,30}$/.test(username)) { showError(errEl, 'Username: 3–30 chars, letters/numbers/underscores'); return }
+    if (password !== confirm)                   { showError(errEl, 'Passwords do not match'); return }
+    if (!birthday)                              { showError(errEl, 'Please enter your birthday'); return }
 
-    const { data: existing } = await supabase
-      .from('profiles').select('id').eq('username', username).maybeSingle()
-    if (existing) {
-      errEl.textContent = 'That username is already taken'
-      errEl.classList.remove('hidden'); return
-    }
+    const { data: existing } = await supabase.from('profiles').select('id').eq('username', username).maybeSingle()
+    if (existing) { showError(errEl, 'That username is already taken'); return }
 
     const { error } = await supabase.auth.signUp({
-      email, password,
-      options: { data: { username, full_name: fullName, birthday } }
+      email, password, options: { data: { username, full_name: fullName, birthday } }
     })
-    if (error) {
-      errEl.textContent = error.message
-      errEl.classList.remove('hidden')
-    } else { closeModal() }
+    if (error) showError(errEl, error.message)
+    else closeModal()
   })
 }
 
@@ -229,24 +242,46 @@ function setupComposer() {
   const select     = document.getElementById('feelingSelect')
   const charCount  = document.getElementById('charCount')
   const postBtn    = document.getElementById('postBtn')
-  const addVideoBtn = document.getElementById('addVideoBtn')
-  const videoUrlWrap = document.getElementById('videoUrlWrap')
+  const fileInput  = document.getElementById('mediaFileInput')
+  const preview    = document.getElementById('mediaPreview')
+  const removeBtn  = document.getElementById('mediaRemove')
 
-  const checkReady = () => {
-    postBtn.disabled = !currentUser || !select.value
-  }
+  const checkReady = () => { postBtn.disabled = !currentUser || !select.value }
 
   input.addEventListener('input', () => {
-    const remaining = 280 - input.value.length
-    charCount.textContent = remaining
-    charCount.className = 'char-count' + (remaining < 20 ? ' danger' : remaining < 60 ? ' warning' : '')
+    const rem = 280 - input.value.length
+    charCount.textContent = rem
+    charCount.className   = 'char-count' + (rem < 20 ? ' danger' : rem < 60 ? ' warning' : '')
     checkReady()
   })
   select.addEventListener('change', checkReady)
 
-  addVideoBtn.addEventListener('click', () => {
-    addVideoBtn.classList.toggle('active')
-    videoUrlWrap.classList.toggle('hidden')
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files[0]
+    if (!file) return
+    pendingFile = file
+
+    const previewImg = document.getElementById('mediaPreviewImg')
+    const previewVid = document.getElementById('mediaPreviewVid')
+    const url        = URL.createObjectURL(file)
+
+    if (file.type.startsWith('image/')) {
+      previewImg.src = url; previewImg.classList.remove('hidden')
+      previewVid.classList.add('hidden')
+    } else {
+      previewVid.src = url; previewVid.classList.remove('hidden')
+      previewImg.classList.add('hidden')
+    }
+    preview.classList.remove('hidden')
+    checkReady()
+  })
+
+  removeBtn.addEventListener('click', () => {
+    pendingFile = null
+    fileInput.value = ''
+    preview.classList.add('hidden')
+    document.getElementById('mediaPreviewImg').classList.add('hidden')
+    document.getElementById('mediaPreviewVid').classList.add('hidden')
   })
 
   postBtn.addEventListener('click', submitPost)
@@ -254,19 +289,34 @@ function setupComposer() {
 
 async function submitPost() {
   if (!currentUser) return
-  const feeling  = document.getElementById('feelingSelect').value
-  const content  = document.getElementById('composerInput').value.trim()
-  const videoUrl = document.getElementById('videoUrlInput').value.trim()
+  const feeling = document.getElementById('feelingSelect').value
+  const content = document.getElementById('composerInput').value.trim()
   if (!feeling) return
 
   const postBtn = document.getElementById('postBtn')
   postBtn.disabled = true; postBtn.textContent = 'Sparking…'
 
+  let media_url  = null
+  let media_type = null
+
+  // Upload media if present
+  if (pendingFile) {
+    const ext  = pendingFile.name.split('.').pop()
+    const path = `${currentUser.id}/${Date.now()}.${ext}`
+    const { error: uploadErr } = await supabase.storage
+      .from('post-media').upload(path, pendingFile)
+
+    if (uploadErr) {
+      postBtn.disabled = false; postBtn.textContent = 'Spark it!'
+      alert('Upload failed: ' + uploadErr.message); return
+    }
+    const { data: { publicUrl } } = supabase.storage.from('post-media').getPublicUrl(path)
+    media_url  = publicUrl
+    media_type = pendingFile.type.startsWith('image/') ? 'image' : 'video'
+  }
+
   const { error } = await supabase.from('posts').insert({
-    user_id:   currentUser.id,
-    feeling,
-    content,
-    video_url: videoUrl || null,
+    user_id: currentUser.id, feeling, content, media_url, media_type
   })
 
   postBtn.textContent = 'Spark it!'
@@ -274,16 +324,16 @@ async function submitPost() {
   if (!error) {
     document.getElementById('feelingSelect').value = ''
     document.getElementById('composerInput').value = ''
-    document.getElementById('videoUrlInput').value = ''
-    document.getElementById('videoUrlWrap').classList.add('hidden')
-    document.getElementById('addVideoBtn').classList.remove('active')
+    document.getElementById('mediaPreview').classList.add('hidden')
+    document.getElementById('mediaRemove').click()
     document.getElementById('charCount').textContent = '280'
     postBtn.disabled = true
+    pendingFile = null
     await loadFeed()
     await loadUserStats()
   } else {
     postBtn.disabled = false
-    console.error('Post error:', error.message)
+    console.error('Post error:', error)
   }
 }
 
@@ -294,18 +344,13 @@ async function loadFeed() {
 
   const { data: posts, error } = await supabase
     .from('posts')
-    .select('*, profiles(username, full_name, avatar_letter)')
+    .select('*, profiles(id, username, full_name, avatar_letter, avatar_url)')
     .order('created_at', { ascending: false })
     .limit(50)
 
   feed.innerHTML = ''
   if (error || !posts?.length) {
-    feed.innerHTML = `
-      <div class="empty-state card">
-        <div class="empty-icon">⚡</div>
-        <h3>No sparks yet!</h3>
-        <p>${currentUser ? 'Be the first to post something.' : 'Log in to start sparkin\'.'}</p>
-      </div>`
+    feed.innerHTML = emptyState('⚡', 'No sparks yet!', currentUser ? 'Be the first to post.' : 'Log in to start sparkin\'.')
     return
   }
   posts.forEach(post => feed.appendChild(renderPost(post)))
@@ -316,72 +361,59 @@ async function loadVideos() {
   const grid = document.getElementById('videosGrid')
   grid.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>'
 
-  const { data: posts, error } = await supabase
+  const { data: posts } = await supabase
     .from('posts')
-    .select('*, profiles(username, full_name, avatar_letter)')
-    .not('video_url', 'is', null)
+    .select('*, profiles(username, full_name, avatar_letter, avatar_url)')
+    .eq('media_type', 'video')
     .order('created_at', { ascending: false })
     .limit(40)
 
   grid.innerHTML = ''
-  if (error || !posts?.length) {
-    grid.innerHTML = `
-      <div class="empty-state card" style="grid-column:1/-1">
-        <div class="empty-icon">🎬</div>
-        <h3>No videos yet!</h3>
-        <p>Be the first to share a video.</p>
-      </div>`
+  if (!posts?.length) {
+    grid.innerHTML = `<div class="empty-state card" style="grid-column:1/-1">${emptyState('🎬','No videos yet!','Upload a video to be first.')}</div>`
     return
   }
 
   posts.forEach(post => {
-    const embedUrl = toEmbedUrl(post.video_url)
-    if (!embedUrl) return
     const profile = post.profiles || {}
     const letter  = profile.avatar_letter || '?'
     const card    = document.createElement('div')
     card.className = 'video-card'
     card.innerHTML = `
       <div class="video-card-thumb">
-        <iframe src="${embedUrl}" frameborder="0" allowfullscreen
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
-        </iframe>
+        <video src="${post.media_url}" preload="metadata"></video>
       </div>
       <div class="video-card-info">
-        <div class="video-card-feeling">${post.feeling || 'Feeling: ⚡'}</div>
-        ${post.content ? `<div style="font-size:0.85rem;color:var(--text-muted);font-style:italic;margin-bottom:6px">"${escapeHtml(post.content)}"</div>` : ''}
+        <div class="video-card-feeling">${escapeHtml(post.feeling || '')}</div>
+        ${post.content ? `<div class="video-card-caption">"${escapeHtml(post.content)}"</div>` : ''}
         <div class="video-card-user">
-          <div class="video-card-avatar" style="background:${colorFromLetter(letter)}">${letter}</div>
-          <span class="video-card-username">${profile.full_name || profile.username || 'Unknown'}</span>
+          <div class="avatar-circle video-card-avatar" style="background:${colorFromLetter(letter)}">${letter}</div>
+          <span class="video-card-username">${escapeHtml(profile.full_name || profile.username || 'Unknown')}</span>
           <span class="video-card-time">${timeAgo(post.created_at)}</span>
         </div>
       </div>
     `
+    // Click → open full post in feed
+    card.addEventListener('click', () => navigateTo('feed'))
     grid.appendChild(card)
   })
 }
 
 // ===== PROFILES PAGE =====
 async function loadProfiles() {
-  const profilesGrid   = document.getElementById('profilesGrid')
-  const profileDetail  = document.getElementById('profileDetail')
-  profilesGrid.classList.remove('hidden')
-  profileDetail.classList.add('hidden')
-  profilesGrid.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>'
+  const grid   = document.getElementById('profilesGrid')
+  const detail = document.getElementById('profileDetail')
+  grid.classList.remove('hidden'); detail.classList.add('hidden')
+  grid.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>'
 
-  const { data: profiles, error } = await supabase
+  const { data: profiles } = await supabase
     .from('profiles')
     .select('*, posts(count)')
     .order('created_at', { ascending: false })
 
-  profilesGrid.innerHTML = ''
-  if (error || !profiles?.length) {
-    profilesGrid.innerHTML = `
-      <div class="empty-state card" style="grid-column:1/-1">
-        <div class="empty-icon">✨</div>
-        <h3>No profiles yet!</h3>
-        <p>Sign up to be the first.</p>
-      </div>`
+  grid.innerHTML = ''
+  if (!profiles?.length) {
+    grid.innerHTML = `<div class="empty-state card" style="grid-column:1/-1">${emptyState('✨','No profiles yet!','Sign up to be first.')}</div>`
     return
   }
 
@@ -390,43 +422,73 @@ async function loadProfiles() {
     const letter    = p.avatar_letter || '?'
     const card      = document.createElement('div')
     card.className  = 'profile-card'
-    card.innerHTML  = `
-      <div class="profile-card-avatar" style="background:${colorFromLetter(letter)}">${letter}</div>
-      <div class="profile-card-name">${p.full_name || p.username}</div>
-      <div class="profile-card-handle">@${p.username}</div>
+
+    const avatarInner = p.avatar_url
+      ? `<img src="${p.avatar_url}" alt="${letter}" />`
+      : letter
+
+    card.innerHTML = `
+      <div class="avatar-circle profile-card-avatar" style="background:${p.avatar_url ? 'none' : colorFromLetter(letter)}">${avatarInner}</div>
+      <div class="profile-card-name">${escapeHtml(p.full_name || p.username)}</div>
+      <div class="profile-card-handle">@${escapeHtml(p.username)}</div>
       <div class="profile-card-posts">${postCount} post${postCount !== 1 ? 's' : ''}</div>
     `
     card.addEventListener('click', () => openProfileDetail(p))
-    profilesGrid.appendChild(card)
+    grid.appendChild(card)
   })
 }
 
 async function openProfileDetail(profile) {
-  const profilesGrid  = document.getElementById('profilesGrid')
-  const profileDetail = document.getElementById('profileDetail')
-  profilesGrid.classList.add('hidden')
-  profileDetail.classList.remove('hidden')
+  document.getElementById('profilesGrid').classList.add('hidden')
+  const detail = document.getElementById('profileDetail')
+  detail.classList.remove('hidden')
 
-  const letter = profile.avatar_letter || '?'
-  document.getElementById('detailAvatar').textContent   = letter
-  document.getElementById('detailAvatar').style.background = colorFromLetter(letter)
-  document.getElementById('detailName').textContent     = profile.full_name || profile.username
-  document.getElementById('detailHandle').textContent   = `@${profile.username}`
+  const letter    = profile.avatar_letter || '?'
+  const avatarEl_ = document.getElementById('detailAvatar')
+  avatarEl_.textContent = ''
+  if (profile.avatar_url) {
+    avatarEl_.innerHTML = `<img src="${profile.avatar_url}" alt="${letter}" />`
+    avatarEl_.style.background = 'none'
+  } else {
+    avatarEl_.textContent    = letter
+    avatarEl_.style.background = colorFromLetter(letter)
+  }
+  setEl('detailName',   profile.full_name || profile.username)
+  setEl('detailHandle', `@${profile.username}`)
 
+  // Follower count
+  const { count: followerCount } = await supabase
+    .from('follows').select('*', { count: 'exact', head: true }).eq('following_id', profile.id)
+  setEl('detailFollowerCount', followerCount ?? 0)
+
+  // Follow button (only for other users)
+  const followBtn = document.getElementById('followBtn')
+  if (currentUser && currentUser.id !== profile.id) {
+    followBtn.classList.remove('hidden')
+    const { data: existing } = await supabase
+      .from('follows').select('id').eq('follower_id', currentUser.id).eq('following_id', profile.id).maybeSingle()
+
+    const isFollowing = !!existing
+    followBtn.textContent = isFollowing ? 'Following' : 'Follow'
+    followBtn.className   = `btn-follow${isFollowing ? ' following' : ''}`
+    followBtn.onclick     = () => toggleFollow(profile.id, followBtn)
+  } else {
+    followBtn.classList.add('hidden')
+  }
+
+  // Their posts
   const feed = document.getElementById('profilePostsFeed')
   feed.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>'
-
   const { data: posts } = await supabase
     .from('posts')
-    .select('*, profiles(username, full_name, avatar_letter)')
+    .select('*, profiles(id, username, full_name, avatar_letter, avatar_url)')
     .eq('user_id', profile.id)
     .order('created_at', { ascending: false })
 
-  document.getElementById('detailPostCount').textContent = posts?.length ?? 0
-
+  setEl('detailPostCount', posts?.length ?? 0)
   feed.innerHTML = ''
   if (!posts?.length) {
-    feed.innerHTML = `<div class="empty-state card"><div class="empty-icon">🌟</div><h3>No posts yet!</h3></div>`
+    feed.innerHTML = emptyState('🌟', 'No posts yet!', '')
     return
   }
   posts.forEach(post => feed.appendChild(renderPost(post)))
@@ -434,56 +496,241 @@ async function openProfileDetail(profile) {
   document.getElementById('backToProfiles').onclick = loadProfiles
 }
 
+// ===== MY PROFILE PAGE =====
+async function loadMyProfile() {
+  if (!currentUser) { openModal('login'); return }
+
+  const letter = currentProfile?.avatar_letter || '?'
+  const url    = currentProfile?.avatar_url
+
+  // Avatar
+  const myAvatarEl = document.getElementById('myAvatar')
+  myAvatarEl.textContent = ''
+  if (url) {
+    myAvatarEl.innerHTML = `<img src="${url}" alt="${letter}" />`
+    myAvatarEl.style.background = 'none'
+  } else {
+    myAvatarEl.textContent    = letter
+    myAvatarEl.style.background = colorFromLetter(letter)
+  }
+
+  setEl('myProfileName',   currentProfile?.full_name || currentProfile?.username || '')
+  setEl('myProfileHandle', `@${currentProfile?.username || ''}`)
+
+  // Stats
+  const [{ count: postCount }, { count: followingCount }, { count: followerCount }] = await Promise.all([
+    supabase.from('posts').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id),
+    supabase.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', currentUser.id),
+    supabase.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', currentUser.id),
+  ])
+  setEl('myPostCount',      postCount      ?? 0)
+  setEl('myFollowingCount', followingCount ?? 0)
+  setEl('myFollowerCount',  followerCount  ?? 0)
+
+  // Stat chips → open follows modal
+  document.getElementById('myStatFollowing').onclick = () => openFollowsModal('following')
+  document.getElementById('myStatFollowers').onclick = () => openFollowsModal('followers')
+  document.getElementById('myStatPosts').onclick     = null
+
+  // Avatar upload
+  const avatarInput = document.getElementById('avatarFileInput')
+  avatarInput.onchange = handleAvatarUpload
+
+  // My posts
+  const feed = document.getElementById('myPostsFeed')
+  feed.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>'
+  const { data: posts } = await supabase
+    .from('posts')
+    .select('*, profiles(id, username, full_name, avatar_letter, avatar_url)')
+    .eq('user_id', currentUser.id)
+    .order('created_at', { ascending: false })
+
+  feed.innerHTML = ''
+  if (!posts?.length) {
+    feed.innerHTML = emptyState('✨', 'No posts yet!', 'Head to the feed and spark something.')
+    return
+  }
+  posts.forEach(post => feed.appendChild(renderPost(post, true)))
+}
+
+// ===== AVATAR UPLOAD =====
+async function handleAvatarUpload(e) {
+  const file = e.target.files[0]
+  if (!file || !currentUser) return
+
+  const ext  = file.name.split('.').pop()
+  const path = `${currentUser.id}.${ext}`
+
+  const { error } = await supabase.storage
+    .from('avatars').upload(path, file, { upsert: true })
+
+  if (error) { alert('Upload failed: ' + error.message); return }
+
+  const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
+
+  await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', currentUser.id)
+  currentProfile.avatar_url = publicUrl
+  refreshAvatarDisplays()
+  await loadMyProfile()
+}
+
+// ===== FOLLOWS =====
+async function toggleFollow(profileId, btn) {
+  if (!currentUser) { openModal('login'); return }
+
+  const isFollowing = btn.classList.contains('following')
+  if (isFollowing) {
+    await supabase.from('follows').delete()
+      .eq('follower_id', currentUser.id).eq('following_id', profileId)
+    btn.textContent = 'Follow'
+    btn.classList.remove('following')
+  } else {
+    await supabase.from('follows').insert({ follower_id: currentUser.id, following_id: profileId })
+    btn.textContent = 'Following'
+    btn.classList.add('following')
+  }
+
+  // Refresh follower count
+  const { count } = await supabase
+    .from('follows').select('*', { count: 'exact', head: true }).eq('following_id', profileId)
+  setEl('detailFollowerCount', count ?? 0)
+}
+
+async function openFollowsModal(type) {
+  const modal     = document.getElementById('followsModal')
+  const title     = document.getElementById('followsModalTitle')
+  const list      = document.getElementById('followsList')
+  const closeBtn  = document.getElementById('followsModalClose')
+
+  title.textContent = type === 'following' ? 'Following' : 'Followers'
+  list.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>'
+  modal.classList.remove('hidden')
+
+  closeBtn.onclick = () => modal.classList.add('hidden')
+  modal.addEventListener('click', e => { if (e.target === modal) modal.classList.add('hidden') })
+
+  let query
+  if (type === 'following') {
+    query = supabase.from('follows')
+      .select('profiles!follows_following_id_fkey(id, username, full_name, avatar_letter, avatar_url)')
+      .eq('follower_id', currentUser.id)
+  } else {
+    query = supabase.from('follows')
+      .select('profiles!follows_follower_id_fkey(id, username, full_name, avatar_letter, avatar_url)')
+      .eq('following_id', currentUser.id)
+  }
+
+  const { data, error } = await query
+  list.innerHTML = ''
+
+  if (error || !data?.length) {
+    list.innerHTML = `<p style="color:var(--text-muted);text-align:center;padding:20px">
+      ${type === 'following' ? 'Not following anyone yet.' : 'No followers yet.'}
+    </p>`
+    return
+  }
+
+  data.forEach(row => {
+    const p      = type === 'following' ? row.profiles : row.profiles
+    const letter = p.avatar_letter || '?'
+    const item   = document.createElement('div')
+    item.className = 'follow-item'
+    item.innerHTML = `
+      <div class="avatar-circle follow-item-avatar" style="background:${p.avatar_url ? 'none' : colorFromLetter(letter)}">
+        ${p.avatar_url ? `<img src="${p.avatar_url}" alt="${letter}" />` : letter}
+      </div>
+      <div>
+        <div class="follow-item-name">${escapeHtml(p.full_name || p.username)}</div>
+        <div class="follow-item-handle">@${escapeHtml(p.username)}</div>
+      </div>
+    `
+    item.addEventListener('click', async () => {
+      modal.classList.add('hidden')
+      await navigateTo('profiles')
+      await openProfileDetail(p)
+    })
+    list.appendChild(item)
+  })
+}
+
+// ===== DELETE POST =====
+async function deletePost(postId, articleEl) {
+  if (!currentUser) return
+  if (!confirm('Delete this post?')) return
+  const { error } = await supabase.from('posts').delete()
+    .eq('id', postId).eq('user_id', currentUser.id)
+  if (!error) {
+    articleEl.style.opacity = '0'
+    articleEl.style.transition = 'opacity 0.3s'
+    setTimeout(() => articleEl.remove(), 300)
+    await loadUserStats()
+  }
+}
+
 // ===== RENDER POST =====
-function renderPost(post) {
+function renderPost(post, showDelete = false) {
   const template = document.getElementById('postTemplate')
   const el       = template.content.cloneNode(true)
   const article  = el.querySelector('.post')
 
-  const profile  = post.profiles || {}
-  const letter   = profile.avatar_letter || '?'
-  const name     = profile.full_name || profile.username || 'Unknown'
-  const handle   = profile.username || 'user'
+  const profile = post.profiles || {}
+  const letter  = profile.avatar_letter || '?'
+  const name    = profile.full_name || profile.username || 'Unknown'
+  const handle  = profile.username || 'user'
 
   article.dataset.postId = post.id
 
-  const avatar = el.querySelector('.post-avatar')
-  avatar.textContent = letter
-  avatar.style.background = colorFromLetter(letter)
+  // Avatar
+  const avatarDiv = el.querySelector('.post-avatar')
+  if (profile.avatar_url) {
+    avatarDiv.innerHTML = `<img src="${profile.avatar_url}" alt="${letter}" />`
+    avatarDiv.style.background = 'none'
+  } else {
+    avatarDiv.textContent    = letter
+    avatarDiv.style.background = colorFromLetter(letter)
+  }
 
   el.querySelector('.post-username').textContent = name
   el.querySelector('.post-handle').textContent   = `@${handle}`
   el.querySelector('.post-time').textContent     = timeAgo(post.created_at)
 
-  // Feeling headline: "Feeling: Awesome 🤩"
+  // Feeling
   const feelingEl = el.querySelector('.post-feeling')
   if (post.feeling) {
-    feelingEl.innerHTML = `Feeling: <span class="feeling-label">${escapeHtml(post.feeling)}</span>`
+    feelingEl.textContent = `Feeling: ${post.feeling}`
   } else if (post.content) {
-    // Legacy posts with no feeling — show content as feeling line
     feelingEl.textContent = post.content
   }
 
-  // Explanation subtext
+  // Explanation
   const explanationEl = el.querySelector('.post-explanation')
-  if (post.feeling && post.content) {
-    explanationEl.textContent = `"${post.content}"`
+  if (post.feeling && post.content) explanationEl.textContent = `"${post.content}"`
+
+  // Media
+  if (post.media_url) {
+    const mediaWrap = el.querySelector('.post-media')
+    mediaWrap.classList.remove('hidden')
+    if (post.media_type === 'image') {
+      mediaWrap.innerHTML = `<img src="${post.media_url}" alt="post image" loading="lazy" />`
+    } else if (post.media_type === 'video') {
+      mediaWrap.innerHTML = `<video src="${post.media_url}" controls playsinline></video>`
+    }
   }
 
-  // Spark (like) button
-  const slapBtn  = el.querySelector('.slap-btn')
+  // Delete button (own posts or showDelete flag)
+  const isOwn = currentUser && (currentUser.id === post.user_id || currentUser.id === profile.id)
+  if (isOwn || showDelete) {
+    const delBtn = el.querySelector('.post-delete-btn')
+    delBtn.classList.remove('hidden')
+    delBtn.addEventListener('click', () => deletePost(post.id, article))
+  }
+
+  // Spark (like)
+  const slapBtn   = el.querySelector('.slap-btn')
   const slapCount = el.querySelector('.slap-count')
   slapCount.textContent = post.slap_count ?? 0
   if (sparkedPosts.has(post.id)) slapBtn.classList.add('slaped')
   slapBtn.addEventListener('click', () => toggleSpark(post.id, slapBtn, slapCount))
-
-  // Video
-  if (post.video_url) {
-    const videoWrap = el.querySelector('.post-video')
-    const iframe    = el.querySelector('.video-embed')
-    const embedUrl  = toEmbedUrl(post.video_url)
-    if (embedUrl) { iframe.src = embedUrl; videoWrap.classList.remove('hidden') }
-  }
 
   // Comments
   const commentBtn      = el.querySelector('.comment-btn')
@@ -496,14 +743,12 @@ function renderPost(post) {
   const commentInput  = el.querySelector('.comment-input')
   const commentSubmit = el.querySelector('.btn-comment-submit')
   commentSubmit.addEventListener('click', () => submitComment(post.id, commentInput, commentsSection))
-  commentInput.addEventListener('keydown', e => {
-    if (e.key === 'Enter') submitComment(post.id, commentInput, commentsSection)
-  })
+  commentInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitComment(post.id, commentInput, commentsSection) })
 
   return el
 }
 
-// ===== SPARKS (likes) =====
+// ===== SPARKS =====
 async function toggleSpark(postId, btn, countEl) {
   if (!currentUser) { openModal('login'); return }
   const isSparked = sparkedPosts.has(postId)
@@ -524,17 +769,15 @@ async function toggleSpark(postId, btn, countEl) {
 // ===== COMMENTS =====
 async function loadComments(postId, section) {
   const list = section.querySelector('.comments-list')
-  list.innerHTML = '<div class="loading-spinner" style="padding:16px"><div class="spinner"></div></div>'
-
+  list.innerHTML = '<div class="loading-spinner" style="padding:14px"><div class="spinner"></div></div>'
   const { data: comments } = await supabase
     .from('comments')
-    .select('*, profiles(username, full_name, avatar_letter)')
-    .eq('post_id', postId)
-    .order('created_at', { ascending: true })
+    .select('*, profiles(username, full_name, avatar_letter, avatar_url)')
+    .eq('post_id', postId).order('created_at', { ascending: true })
 
   list.innerHTML = ''
   if (!comments?.length) {
-    list.innerHTML = '<p style="color:var(--text-muted);font-size:0.85rem;padding:4px 0">No comments yet.</p>'
+    list.innerHTML = '<p style="color:var(--text-muted);font-size:0.83rem;padding:4px 0">No comments yet.</p>'
     return
   }
   comments.forEach(c => list.appendChild(renderComment(c)))
@@ -544,10 +787,13 @@ function renderComment(c) {
   const div    = document.createElement('div')
   div.className = 'comment'
   const letter = c.profiles?.avatar_letter || '?'
+  const url    = c.profiles?.avatar_url
   div.innerHTML = `
-    <div class="comment-avatar" style="background:${colorFromLetter(letter)}">${letter}</div>
+    <div class="avatar-circle comment-avatar" style="background:${url ? 'none' : colorFromLetter(letter)}">
+      ${url ? `<img src="${url}" alt="${letter}" />` : letter}
+    </div>
     <div class="comment-body">
-      <div class="comment-author">${c.profiles?.full_name || c.profiles?.username || 'Unknown'}</div>
+      <div class="comment-author">${escapeHtml(c.profiles?.full_name || c.profiles?.username || 'Unknown')}</div>
       <div class="comment-text">${escapeHtml(c.content)}</div>
     </div>
   `
@@ -558,9 +804,7 @@ async function submitComment(postId, input, section) {
   if (!currentUser) { openModal('login'); return }
   const content = input.value.trim()
   if (!content) return
-  const { error } = await supabase.from('comments').insert({
-    post_id: postId, user_id: currentUser.id, content,
-  })
+  const { error } = await supabase.from('comments').insert({ post_id: postId, user_id: currentUser.id, content })
   if (!error) { input.value = ''; await loadComments(postId, section) }
 }
 
@@ -572,28 +816,42 @@ async function loadWhoList() {
   const list = document.getElementById('whoList')
   list.innerHTML = ''
   if (!profiles?.length) {
-    list.innerHTML = '<li style="color:var(--text-muted);font-size:0.85rem">No one yet!</li>'
+    list.innerHTML = '<li style="color:var(--text-muted);font-size:0.83rem">No one yet!</li>'
     return
   }
   profiles.forEach(p => {
-    const li = document.createElement('li')
+    const letter = p.avatar_letter || '?'
+    const li     = document.createElement('li')
     li.className = 'who-item'
     li.innerHTML = `
-      <div class="who-avatar" style="background:${colorFromLetter(p.avatar_letter || '?')}">${p.avatar_letter || '?'}</div>
+      <div class="avatar-circle who-avatar" style="background:${p.avatar_url ? 'none' : colorFromLetter(letter)}">
+        ${p.avatar_url ? `<img src="${p.avatar_url}" alt="${letter}" />` : letter}
+      </div>
       <div class="who-info">
-        <div class="who-name">${p.full_name || p.username}</div>
-        <div class="who-handle">@${p.username}</div>
+        <div class="who-name">${escapeHtml(p.full_name || p.username)}</div>
+        <div class="who-handle">@${escapeHtml(p.username)}</div>
       </div>
     `
-    li.addEventListener('click', async () => {
-      await navigateTo('profiles')
-      await openProfileDetail(p)
-    })
+    li.addEventListener('click', async () => { await navigateTo('profiles'); await openProfileDetail(p) })
     list.appendChild(li)
   })
 }
 
 // ===== HELPERS =====
+function setEl(id, val) { const el = document.getElementById(id); if (el) el.textContent = val }
+function showError(el, msg) { el.textContent = msg; el.classList.remove('hidden') }
+
+function avatarEl(profile, cls = '') {
+  const letter = profile?.avatar_letter || '?'
+  const url    = profile?.avatar_url
+  if (url) return `<div class="${cls}" style="background:none;overflow:hidden;border-radius:50%"><img src="${url}" /></div>`
+  return `<div class="${cls}" style="background:${colorFromLetter(letter)}">${letter}</div>`
+}
+
+function emptyState(icon, title, msg) {
+  return `<div class="empty-state card"><div class="empty-icon">${icon}</div><h3>${title}</h3>${msg ? `<p>${msg}</p>` : ''}</div>`
+}
+
 function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime()
   const m    = Math.floor(diff / 60000)
@@ -604,33 +862,19 @@ function timeAgo(dateStr) {
   return `${Math.floor(h / 24)}d ago`
 }
 
-function toEmbedUrl(url) {
-  try {
-    const u = new URL(url)
-    if (u.hostname.includes('youtube.com')) {
-      const id = u.searchParams.get('v')
-      return id ? `https://www.youtube.com/embed/${id}` : null
-    }
-    if (u.hostname.includes('youtu.be')) {
-      return `https://www.youtube.com/embed${u.pathname}`
-    }
-  } catch {}
-  return null
-}
-
 function colorFromLetter(letter) {
   const colors = [
     'linear-gradient(135deg,#8B5CF6,#22D3EE)',
-    'linear-gradient(135deg,#F472B6,#8B5CF6)',
+    'linear-gradient(135deg,#FF10F0,#8B5CF6)',
     'linear-gradient(135deg,#22D3EE,#FBBF24)',
-    'linear-gradient(135deg,#FBBF24,#F472B6)',
-    'linear-gradient(135deg,#6D28D9,#06B6D4)',
+    'linear-gradient(135deg,#39FF14,#22D3EE)',
+    'linear-gradient(135deg,#FBBF24,#FF10F0)',
   ]
   return colors[(letter.charCodeAt(0) || 0) % colors.length]
 }
 
 function escapeHtml(str) {
-  return String(str)
+  return String(str ?? '')
     .replace(/&/g,'&amp;').replace(/</g,'&lt;')
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
 }

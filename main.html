@@ -16,26 +16,43 @@
       <div class="logo">
         <span class="logo-the">The</span> <span class="logo-slap">Spark</span><span class="logo-bolt">⚡</span>
       </div>
-      <nav class="header-nav">
-        <a href="#feed"     class="nav-link active" data-page="feed">Feed</a>
-        <a href="#videos"   class="nav-link"         data-page="videos">Videos</a>
-        <a href="#profiles" class="nav-link"         data-page="profiles">Profiles</a>
+
+      <!-- Desktop Nav -->
+      <nav class="header-nav" id="desktopNav">
+        <a href="#" class="nav-link active" data-page="feed">Feed</a>
+        <a href="#" class="nav-link"        data-page="videos">Videos</a>
+        <a href="#" class="nav-link"        data-page="profiles">Profiles</a>
+        <a href="#" class="nav-link nav-myprofile hidden" data-page="myprofile">My Profile</a>
       </nav>
+
       <div class="header-user" id="headerUser">
         <button class="btn btn-login"  id="loginBtn">Log In</button>
         <button class="btn btn-signup" id="signupBtn">Sign Up</button>
       </div>
+
+      <!-- Mobile hamburger -->
+      <button class="hamburger" id="hamburger" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+
+    <!-- Mobile Nav Dropdown -->
+    <div class="mobile-nav hidden" id="mobileNav">
+      <a href="#" class="mobile-nav-link" data-page="feed">⚡ Feed</a>
+      <a href="#" class="mobile-nav-link" data-page="videos">🎬 Videos</a>
+      <a href="#" class="mobile-nav-link" data-page="profiles">✨ Profiles</a>
+      <a href="#" class="mobile-nav-link mobile-myprofile hidden" data-page="myprofile">👤 My Profile</a>
     </div>
   </header>
 
   <!-- MAIN LAYOUT -->
   <div class="site-wrapper">
 
-    <!-- SIDEBAR -->
+    <!-- SIDEBAR (desktop) -->
     <aside class="sidebar">
       <div class="sidebar-profile">
         <div class="profile-avatar-wrap">
-          <div class="profile-avatar" id="sidebarAvatar">?</div>
+          <div class="profile-avatar avatar-circle" id="sidebarAvatar">?</div>
         </div>
         <div class="profile-name"   id="sidebarName">Guest</div>
         <div class="profile-handle" id="sidebarHandle">@thespark</div>
@@ -56,7 +73,7 @@
 
       <div class="sidebar-section">
         <div class="sidebar-title">Moods Right Now</div>
-        <div class="tag-cloud" id="moodCloud">
+        <div class="tag-cloud">
           <span class="tag">⚡ Epic</span>
           <span class="tag">🎭 Dramatic</span>
           <span class="tag">🎵 Musical</span>
@@ -72,11 +89,9 @@
 
       <!-- ===== FEED PAGE ===== -->
       <div class="page" id="page-feed">
-
-        <!-- POST COMPOSER -->
         <div class="composer card" id="composer">
           <div class="composer-top">
-            <div class="composer-avatar" id="composerAvatar">?</div>
+            <div class="composer-avatar avatar-circle" id="composerAvatar">?</div>
             <div class="composer-fields">
               <select class="feeling-select" id="feelingSelect">
                 <option value="">Pick a feeling…</option>
@@ -103,32 +118,33 @@
                 <option value="Angry 😤">Angry 😤</option>
                 <option value="Bored 😴">Bored 😴</option>
               </select>
-              <textarea
-                class="composer-input"
-                id="composerInput"
-                placeholder="Tell everyone why…"
-                maxlength="280"
-              ></textarea>
+              <textarea class="composer-input" id="composerInput"
+                placeholder="Tell everyone why…" maxlength="280"></textarea>
             </div>
           </div>
+
+          <!-- Media preview -->
+          <div class="media-preview hidden" id="mediaPreview">
+            <button class="media-preview-remove" id="mediaRemove">&times;</button>
+            <img id="mediaPreviewImg" class="hidden" alt="preview" />
+            <video id="mediaPreviewVid" class="hidden" controls></video>
+          </div>
+
           <div class="composer-bottom">
             <div class="composer-options">
-              <button class="composer-opt" id="addVideoBtn" title="Add video link">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-                Video
-              </button>
+              <label class="composer-opt" for="mediaFileInput" title="Add photo or video">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                Photo / Video
+              </label>
+              <input type="file" id="mediaFileInput" accept="image/*,video/*" style="display:none" />
             </div>
             <div class="composer-right">
               <span class="char-count" id="charCount">280</span>
               <button class="btn btn-post" id="postBtn" disabled>Spark it!</button>
             </div>
           </div>
-          <div class="video-url-wrap hidden" id="videoUrlWrap">
-            <input type="url" class="video-url-input" id="videoUrlInput" placeholder="Paste YouTube URL…" />
-          </div>
         </div>
 
-        <!-- POSTS FEED -->
         <div class="posts-feed" id="postsFeed">
           <div class="loading-spinner"><div class="spinner"></div></div>
         </div>
@@ -138,7 +154,7 @@
       <div class="page hidden" id="page-videos">
         <div class="page-header-bar">
           <h2 class="page-title">⚡ Videos</h2>
-          <p class="page-subtitle">Catch everyone's latest clips</p>
+          <p class="page-subtitle">Everyone's latest clips</p>
         </div>
         <div class="videos-grid" id="videosGrid">
           <div class="loading-spinner"><div class="spinner"></div></div>
@@ -154,21 +170,46 @@
         <div class="profiles-grid" id="profilesGrid">
           <div class="loading-spinner"><div class="spinner"></div></div>
         </div>
-
-        <!-- Profile detail panel -->
         <div class="profile-detail hidden" id="profileDetail">
-          <button class="btn-back" id="backToProfiles">← Back to Profiles</button>
+          <button class="btn-back" id="backToProfiles">← Back</button>
           <div class="profile-detail-header card">
-            <div class="profile-detail-avatar" id="detailAvatar"></div>
+            <div class="profile-detail-avatar avatar-circle" id="detailAvatar"></div>
             <div class="profile-detail-info">
-              <div class="profile-detail-name" id="detailName"></div>
+              <div class="profile-detail-name"   id="detailName"></div>
               <div class="profile-detail-handle" id="detailHandle"></div>
               <div class="profile-detail-stats">
-                <span id="detailPostCount">0</span> posts
+                <span id="detailPostCount">0</span> posts ·
+                <span id="detailFollowerCount">0</span> followers
               </div>
+              <button class="btn-follow hidden" id="followBtn">Follow</button>
             </div>
           </div>
           <div class="posts-feed" id="profilePostsFeed"></div>
+        </div>
+      </div>
+
+      <!-- ===== MY PROFILE PAGE ===== -->
+      <div class="page hidden" id="page-myprofile">
+        <div class="my-profile-header card">
+          <div class="my-avatar-section">
+            <div class="my-avatar-wrap">
+              <div class="my-avatar avatar-circle" id="myAvatar">?</div>
+              <label class="avatar-upload-btn" for="avatarFileInput" title="Change photo">📷</label>
+              <input type="file" id="avatarFileInput" accept="image/*" style="display:none" />
+            </div>
+          </div>
+          <div class="my-profile-info">
+            <div class="my-profile-name"   id="myProfileName"></div>
+            <div class="my-profile-handle" id="myProfileHandle"></div>
+            <div class="my-profile-stats">
+              <button class="stat-chip" id="myStatPosts"><span id="myPostCount">0</span> Posts</button>
+              <button class="stat-chip" id="myStatFollowing"><span id="myFollowingCount">0</span> Following</button>
+              <button class="stat-chip" id="myStatFollowers"><span id="myFollowerCount">0</span> Followers</button>
+            </div>
+          </div>
+        </div>
+        <div class="posts-feed" id="myPostsFeed">
+          <div class="loading-spinner"><div class="spinner"></div></div>
         </div>
       </div>
 
@@ -179,13 +220,10 @@
   <div class="modal-overlay hidden" id="authModal">
     <div class="modal card">
       <button class="modal-close" id="modalClose">&times;</button>
-
       <div class="modal-tabs">
         <button class="modal-tab active" id="tabLogin">Log In</button>
         <button class="modal-tab"        id="tabSignup">Sign Up</button>
       </div>
-
-      <!-- Login Form -->
       <form class="auth-form" id="loginForm">
         <div class="form-group">
           <label>Username</label>
@@ -198,8 +236,6 @@
         <div class="form-error hidden" id="loginError"></div>
         <button type="submit" class="btn btn-post full-width">Log In</button>
       </form>
-
-      <!-- Signup Form -->
       <form class="auth-form hidden" id="signupForm">
         <div class="form-group">
           <label>Full Name</label>
@@ -231,33 +267,43 @@
     </div>
   </div>
 
+  <!-- FOLLOWS MODAL -->
+  <div class="modal-overlay hidden" id="followsModal">
+    <div class="modal card">
+      <button class="modal-close" id="followsModalClose">&times;</button>
+      <h3 class="follows-modal-title" id="followsModalTitle">Following</h3>
+      <div class="follows-list" id="followsList"></div>
+    </div>
+  </div>
+
   <!-- POST TEMPLATE -->
   <template id="postTemplate">
     <article class="post card">
       <div class="post-header">
-        <div class="post-avatar"></div>
+        <div class="post-avatar avatar-circle"></div>
         <div class="post-meta">
           <span class="post-username"></span>
           <span class="post-handle"></span>
           <span class="post-time"></span>
         </div>
+        <button class="post-delete-btn hidden" title="Delete post">🗑</button>
       </div>
       <div class="post-body">
         <div class="post-feeling"></div>
         <p class="post-explanation"></p>
-        <div class="post-video hidden">
-          <iframe class="video-embed" frameborder="0" allowfullscreen
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
-          </iframe>
-        </div>
+        <div class="post-media hidden"></div>
       </div>
       <div class="post-actions">
         <button class="action-btn slap-btn">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          </svg>
           <span class="slap-count">0</span> Sparks
         </button>
         <button class="action-btn comment-btn">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
           Comment
         </button>
       </div>
