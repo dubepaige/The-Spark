@@ -4,7 +4,10 @@
       "Bash(claude mcp *)",
       "Read(//usr/local/bin/**)",
       "Read(//Users/paige/.nvm/versions/**)",
-      "Bash(npx claude *)"
+      "Bash(npx claude *)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(gh api *)",
+      "Bash(gh auth *)"
     ]
   }
 }

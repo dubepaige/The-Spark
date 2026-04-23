@@ -2,7 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 // ===== CONFIG =====
 const SUPABASE_URL = 'https://jqrefxdumksvddrohmts.supabase.co'
-const SUPABASE_ANON_KEY = 'sb_secret_HSFDV79t00mEAlcJcOq3pQ_YpmAeyEr'
+const SUPABASE_ANON_KEY = 'sb_publishable_hcJBTW3HNyFHd1pBEczxwA_PE0BJs62'
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
