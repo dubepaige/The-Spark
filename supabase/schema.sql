@@ -5,8 +5,14 @@ create table if not exists public.profiles (
   id uuid references auth.users(id) on delete cascade primary key,
   username text unique not null,
   avatar_letter text,
+  email text,
+  birthday date,
   created_at timestamptz default now()
 );
+
+-- If the table already exists, add columns (safe to run multiple times)
+alter table public.profiles add column if not exists email text;
+alter table public.profiles add column if not exists birthday date;
 
 alter table public.profiles enable row level security;
 
@@ -83,12 +89,17 @@ create policy "Users can delete their own comments"
 -- FUNCTION: auto-create profile on signup
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer as $$
+declare
+  uname text;
 begin
-  insert into public.profiles (id, username, avatar_letter)
+  uname := coalesce(new.raw_user_meta_data->>'username', split_part(new.email, '@', 1));
+  insert into public.profiles (id, username, avatar_letter, email, birthday)
   values (
     new.id,
-    coalesce(new.raw_user_meta_data->>'username', split_part(new.email, '@', 1)),
-    upper(substring(coalesce(new.raw_user_meta_data->>'username', new.email), 1, 1))
+    uname,
+    upper(substring(uname, 1, 1)),
+    new.email,
+    (new.raw_user_meta_data->>'birthday')::date
   );
   return new;
 end;

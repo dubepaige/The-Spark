@@ -124,13 +124,25 @@ function setupAuthModal() {
 
   document.getElementById('loginForm').addEventListener('submit', async e => {
     e.preventDefault()
-    const username = document.getElementById('loginUsername').value.trim().toLowerCase()
+    const username = document.getElementById('loginUsername').value.trim()
     const password = document.getElementById('loginPassword').value
     const errEl = document.getElementById('loginError')
     errEl.classList.add('hidden')
 
-    const email = usernameToEmail(username)
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    // Look up the real email by username
+    const { data: profile, error: lookupError } = await supabase
+      .from('profiles')
+      .select('email')
+      .eq('username', username)
+      .maybeSingle()
+
+    if (lookupError || !profile?.email) {
+      errEl.textContent = 'Invalid username or password'
+      errEl.classList.remove('hidden')
+      return
+    }
+
+    const { error } = await supabase.auth.signInWithPassword({ email: profile.email, password })
     if (error) {
       errEl.textContent = 'Invalid username or password'
       errEl.classList.remove('hidden')
@@ -142,12 +154,27 @@ function setupAuthModal() {
   document.getElementById('signupForm').addEventListener('submit', async e => {
     e.preventDefault()
     const username = document.getElementById('signupUsername').value.trim()
+    const email    = document.getElementById('signupEmail').value.trim()
+    const birthday = document.getElementById('signupBirthday').value
     const password = document.getElementById('signupPassword').value
-    const errEl = document.getElementById('signupError')
+    const confirm  = document.getElementById('signupPasswordConfirm').value
+    const errEl    = document.getElementById('signupError')
     errEl.classList.add('hidden')
 
     if (!/^[a-zA-Z0-9_]{3,30}$/.test(username)) {
       errEl.textContent = 'Username must be 3–30 characters, letters/numbers/underscores only'
+      errEl.classList.remove('hidden')
+      return
+    }
+
+    if (password !== confirm) {
+      errEl.textContent = 'Passwords do not match'
+      errEl.classList.remove('hidden')
+      return
+    }
+
+    if (!birthday) {
+      errEl.textContent = 'Please enter your birthday'
       errEl.classList.remove('hidden')
       return
     }
@@ -165,10 +192,10 @@ function setupAuthModal() {
       return
     }
 
-    const email = usernameToEmail(username.toLowerCase())
     const { error } = await supabase.auth.signUp({
-      email, password,
-      options: { data: { username } }
+      email,
+      password,
+      options: { data: { username, birthday } }
     })
     if (error) {
       errEl.textContent = error.message
@@ -452,10 +479,6 @@ async function loadWhoList() {
 }
 
 // ===== HELPERS =====
-function usernameToEmail(username) {
-  return `${username}@theslap.users`
-}
-
 function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime()
   const m = Math.floor(diff / 60000)
