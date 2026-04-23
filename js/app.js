@@ -46,7 +46,7 @@ async function setUser(user) {
   headerUser.innerHTML = `
     <div class="header-user-info">
       <div class="header-avatar">${currentProfile?.avatar_letter || '?'}</div>
-      <span class="header-username">${currentProfile?.username || user.email}</span>
+      <span class="header-username">${currentProfile?.full_name || currentProfile?.username || user.email}</span>
     </div>
     <button class="btn btn-logout" id="logoutBtn">Log Out</button>
   `
@@ -58,7 +58,7 @@ async function setUser(user) {
   const sidebarName = document.getElementById('sidebarName')
   const sidebarHandle = document.getElementById('sidebarHandle')
   const sidebarAvatar = document.getElementById('sidebarAvatar')
-  if (sidebarName) sidebarName.textContent = currentProfile?.username || user.email
+  if (sidebarName) sidebarName.textContent = currentProfile?.full_name || currentProfile?.username || user.email
   if (sidebarHandle) sidebarHandle.textContent = `@${currentProfile?.username || 'user'}`
   if (sidebarAvatar) sidebarAvatar.textContent = currentProfile?.avatar_letter || '?'
 
@@ -153,6 +153,7 @@ function setupAuthModal() {
 
   document.getElementById('signupForm').addEventListener('submit', async e => {
     e.preventDefault()
+    const fullName = document.getElementById('signupFullName').value.trim()
     const username = document.getElementById('signupUsername').value.trim()
     const email    = document.getElementById('signupEmail').value.trim()
     const birthday = document.getElementById('signupBirthday').value
@@ -160,6 +161,12 @@ function setupAuthModal() {
     const confirm  = document.getElementById('signupPasswordConfirm').value
     const errEl    = document.getElementById('signupError')
     errEl.classList.add('hidden')
+
+    if (!fullName) {
+      errEl.textContent = 'Please enter your full name'
+      errEl.classList.remove('hidden')
+      return
+    }
 
     if (!/^[a-zA-Z0-9_]{3,30}$/.test(username)) {
       errEl.textContent = 'Username must be 3–30 characters, letters/numbers/underscores only'
@@ -195,7 +202,7 @@ function setupAuthModal() {
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { username, birthday } }
+      options: { data: { username, full_name: fullName, birthday } }
     })
     if (error) {
       errEl.textContent = error.message

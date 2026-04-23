@@ -4,6 +4,7 @@
 create table if not exists public.profiles (
   id uuid references auth.users(id) on delete cascade primary key,
   username text unique not null,
+  full_name text,
   avatar_letter text,
   email text,
   birthday date,
@@ -13,6 +14,7 @@ create table if not exists public.profiles (
 -- If the table already exists, add columns (safe to run multiple times)
 alter table public.profiles add column if not exists email text;
 alter table public.profiles add column if not exists birthday date;
+alter table public.profiles add column if not exists full_name text;
 
 alter table public.profiles enable row level security;
 
@@ -93,10 +95,11 @@ declare
   uname text;
 begin
   uname := coalesce(new.raw_user_meta_data->>'username', split_part(new.email, '@', 1));
-  insert into public.profiles (id, username, avatar_letter, email, birthday)
+  insert into public.profiles (id, username, full_name, avatar_letter, email, birthday)
   values (
     new.id,
     uname,
+    new.raw_user_meta_data->>'full_name',
     upper(substring(uname, 1, 1)),
     new.email,
     (new.raw_user_meta_data->>'birthday')::date
