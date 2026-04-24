@@ -29,6 +29,7 @@ async function init() {
   setupNav()
   setupHamburger()
   setupCropModal()
+  setupSuggestionsModal()
   await navigateTo('feed')
   await loadWhoList()
 }
@@ -89,7 +90,7 @@ async function setUser(user) {
   headerUser.innerHTML = `
     <div class="header-user-info" id="headerUserInfo">
       ${avatarHTML}
-      <span class="header-username">${currentProfile?.full_name || currentProfile?.username || user.email}</span>
+      <span class="header-username">@${currentProfile?.username || user.email}</span>
     </div>
     <button class="btn btn-logout" id="logoutBtn">Log Out</button>
   `
@@ -420,6 +421,19 @@ async function loadProfiles() {
   if (!profiles?.length) {
     grid.innerHTML = `<div class="empty-state card" style="grid-column:1/-1">${emptyState('✨','No profiles yet!','Sign up to be first.')}</div>`
     return
+  }
+
+  // Sort: same college (2pts) + same industry (1pt) first, then everyone else
+  if (currentProfile?.college || currentProfile?.industry) {
+    profiles.sort((a, b) => {
+      const score = p => {
+        let s = 0
+        if (currentProfile.college  && p.college  === currentProfile.college)  s += 2
+        if (currentProfile.industry && p.industry === currentProfile.industry) s += 1
+        return s
+      }
+      return score(b) - score(a)
+    })
   }
 
   profiles.forEach(p => {
@@ -994,6 +1008,60 @@ function escapeHtml(str) {
   return String(str ?? '')
     .replace(/&/g,'&amp;').replace(/</g,'&lt;')
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+}
+
+// ===== SUGGESTIONS / CONTACT =====
+function openSuggestionsModal() {
+  const modal = document.getElementById('suggestionsModal')
+  modal.classList.remove('hidden')
+  // Pre-fill name if logged in
+  const nameInput = document.getElementById('suggestName')
+  if (nameInput && currentProfile) {
+    nameInput.value = currentProfile.full_name || currentProfile.username || ''
+  }
+}
+
+function closeSuggestionsModal() {
+  document.getElementById('suggestionsModal').classList.add('hidden')
+  document.getElementById('suggestForm').reset()
+  document.getElementById('suggestError').classList.add('hidden')
+  document.getElementById('suggestSuccess').classList.add('hidden')
+}
+
+function setupSuggestionsModal() {
+  document.getElementById('suggestModalClose').addEventListener('click', closeSuggestionsModal)
+  document.getElementById('suggestionsModal').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeSuggestionsModal()
+  })
+  document.getElementById('feedbackBtn').addEventListener('click', openSuggestionsModal)
+
+  document.getElementById('suggestForm').addEventListener('submit', async e => {
+    e.preventDefault()
+    const name    = document.getElementById('suggestName').value.trim()
+    const message = document.getElementById('suggestMessage').value.trim()
+    const errEl   = document.getElementById('suggestError')
+    const okEl    = document.getElementById('suggestSuccess')
+    const btn     = document.getElementById('suggestSubmitBtn')
+    errEl.classList.add('hidden'); okEl.classList.add('hidden')
+
+    if (!message) { errEl.textContent = 'Please enter a message.'; errEl.classList.remove('hidden'); return }
+
+    btn.disabled = true; btn.textContent = 'Sending…'
+    const { error } = await supabase.from('suggestions').insert({
+      user_id: currentUser?.id || null,
+      name:    name || null,
+      message,
+    })
+    btn.disabled = false; btn.textContent = 'Send It! ⚡'
+
+    if (error) {
+      errEl.textContent = 'Something went wrong — try again.'; errEl.classList.remove('hidden')
+    } else {
+      okEl.classList.remove('hidden')
+      document.getElementById('suggestMessage').value = ''
+      setTimeout(closeSuggestionsModal, 2400)
+    }
+  })
 }
 
 init()

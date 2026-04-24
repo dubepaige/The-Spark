@@ -621,6 +621,29 @@ body {
 .cropper-view-box { box-shadow: 0 0 0 1px var(--neon-pink), 0 0 0 9999px rgba(0,0,0,0.5); outline: none; }
 .cropper-face { background-color: transparent; }
 
+/* ===== FLOATING FEEDBACK BUTTON ===== */
+.feedback-fab {
+  position: fixed; bottom: 24px; right: 24px; z-index: 150;
+  width: 52px; height: 52px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--purple), var(--neon-pink));
+  color: white; font-size: 1.35rem; border: none; cursor: pointer;
+  box-shadow: 0 4px 20px rgba(139,92,246,0.5), 0 0 30px rgba(255,16,240,0.25);
+  transition: all 0.25s; display: flex; align-items: center; justify-content: center;
+}
+.feedback-fab:hover {
+  transform: scale(1.12) translateY(-2px);
+  box-shadow: 0 6px 28px rgba(139,92,246,0.65), 0 0 40px rgba(255,16,240,0.4);
+}
+.feedback-fab:active { transform: scale(0.96); }
+
+/* Suggestion success message */
+.suggest-success {
+  background: rgba(57,255,20,0.1); border: 1px solid rgba(57,255,20,0.35);
+  border-radius: var(--radius-sm); padding: 10px 14px;
+  color: var(--neon-green); font-weight: 700; font-size: 0.9rem; text-align: center;
+  filter: drop-shadow(0 0 6px rgba(57,255,20,0.3));
+}
+
 /* ===== UTILITIES ===== */
 .hidden { display: none !important; }
 

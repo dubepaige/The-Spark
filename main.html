@@ -369,6 +369,31 @@
     </article>
   </template>
 
+  <!-- SUGGESTIONS MODAL -->
+  <div class="modal-overlay hidden" id="suggestionsModal">
+    <div class="modal card">
+      <button class="modal-close" id="suggestModalClose">&times;</button>
+      <h3 class="follows-modal-title">💡 Suggestions &amp; Contact</h3>
+      <p style="color:var(--text-muted);font-size:0.84rem;margin-bottom:16px">Got an idea, a bug report, or just want to say hi? Send it over!</p>
+      <form class="auth-form" id="suggestForm">
+        <div class="form-group">
+          <label>Your Name <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
+          <input type="text" id="suggestName" placeholder="Tori Vega" maxlength="80" autocomplete="name" />
+        </div>
+        <div class="form-group">
+          <label>Message</label>
+          <textarea id="suggestMessage" class="composer-input" placeholder="What's on your mind?" maxlength="1000" rows="5" required style="min-height:110px"></textarea>
+        </div>
+        <div class="form-error  hidden" id="suggestError"></div>
+        <div class="suggest-success hidden" id="suggestSuccess">⚡ Got it — thanks!</div>
+        <button type="submit" class="btn btn-post full-width" id="suggestSubmitBtn">Send It! ⚡</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- FLOATING FEEDBACK BUTTON -->
+  <button class="feedback-fab" id="feedbackBtn" title="Suggestions &amp; Contact">💡</button>
+
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
