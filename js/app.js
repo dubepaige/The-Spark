@@ -453,7 +453,7 @@ async function loadProfiles() {
     card.innerHTML = `
       <div class="avatar-circle profile-card-avatar" style="background:${p.avatar_url ? 'none' : colorFromLetter(letter)}">${avatarInner}</div>
       <div class="profile-card-name">${escapeHtml(p.full_name || p.username)}</div>
-      <div class="profile-card-handle">@${escapeHtml(p.username)}</div>
+      <div class="profile-card-handle">@${escapeHtml(p.username)} ${zodiacEmoji(p.birthday)}</div>
       <div class="profile-card-posts">${postCount} post${postCount !== 1 ? 's' : ''}</div>
       ${metaParts.length ? `<div class="profile-card-meta">${metaParts.join(' · ')}</div>` : ''}
     `
@@ -478,7 +478,7 @@ async function openProfileDetail(profile) {
     avatarEl_.style.background = colorFromLetter(letter)
   }
   setEl('detailName',   profile.full_name || profile.username)
-  setEl('detailHandle', `@${profile.username}`)
+  setEl('detailHandle', `@${profile.username} ${zodiacEmoji(profile.birthday)}`)
 
   // College / industry
   const detailMetaEl = document.getElementById('detailMeta')
@@ -549,7 +549,7 @@ async function loadMyProfile() {
   }
 
   setEl('myProfileName',   currentProfile?.full_name || currentProfile?.username || '')
-  setEl('myProfileHandle', `@${currentProfile?.username || ''}`)
+  setEl('myProfileHandle', `@${currentProfile?.username || ''} ${zodiacEmoji(currentProfile?.birthday)}`)
 
   // Stats
   const [{ count: postCount }, { count: followingCount }, { count: followerCount }] = await Promise.all([
@@ -966,6 +966,26 @@ async function loadWhoList() {
     li.addEventListener('click', async () => { await navigateTo('profiles'); await openProfileDetail(p) })
     list.appendChild(li)
   })
+}
+
+// ===== ZODIAC =====
+function zodiacEmoji(birthday) {
+  if (!birthday) return ''
+  const d = new Date(birthday + 'T12:00:00') // noon to avoid timezone shifts
+  const m = d.getMonth() + 1 // 1-12
+  const day = d.getDate()
+  if ((m === 3 && day >= 21) || (m === 4 && day <= 19)) return '♈' // Aries
+  if ((m === 4 && day >= 20) || (m === 5 && day <= 20)) return '♉' // Taurus
+  if ((m === 5 && day >= 21) || (m === 6 && day <= 20)) return '♊' // Gemini
+  if ((m === 6 && day >= 21) || (m === 7 && day <= 22)) return '♋' // Cancer
+  if ((m === 7 && day >= 23) || (m === 8 && day <= 22)) return '♌' // Leo
+  if ((m === 8 && day >= 23) || (m === 9 && day <= 22)) return '♍' // Virgo
+  if ((m === 9 && day >= 23) || (m === 10 && day <= 22)) return '♎' // Libra
+  if ((m === 10 && day >= 23) || (m === 11 && day <= 21)) return '♏' // Scorpio
+  if ((m === 11 && day >= 22) || (m === 12 && day <= 21)) return '♐' // Sagittarius
+  if ((m === 12 && day >= 22) || (m === 1 && day <= 19)) return '♑' // Capricorn
+  if ((m === 1 && day >= 20) || (m === 2 && day <= 18)) return '♒' // Aquarius
+  return '♓' // Pisces (Feb 19 – Mar 20)
 }
 
 // ===== HELPERS =====
