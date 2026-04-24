@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.css" />
 </head>
 <body>
 
@@ -177,6 +178,7 @@
             <div class="profile-detail-info">
               <div class="profile-detail-name"   id="detailName"></div>
               <div class="profile-detail-handle" id="detailHandle"></div>
+              <div class="profile-detail-meta hidden" id="detailMeta"></div>
               <div class="profile-detail-stats">
                 <span id="detailPostCount">0</span> posts ·
                 <span id="detailFollowerCount">0</span> followers
@@ -201,6 +203,7 @@
           <div class="my-profile-info">
             <div class="my-profile-name"   id="myProfileName"></div>
             <div class="my-profile-handle" id="myProfileHandle"></div>
+            <div class="my-profile-meta"   id="myProfileMeta"></div>
             <div class="my-profile-stats">
               <button class="stat-chip" id="myStatPosts"><span id="myPostCount">0</span> Posts</button>
               <button class="stat-chip" id="myStatFollowing"><span id="myFollowingCount">0</span> Following</button>
@@ -208,6 +211,39 @@
             </div>
           </div>
         </div>
+
+        <!-- Edit profile info -->
+        <div class="edit-profile-card card">
+          <div class="edit-profile-title">Edit Profile</div>
+          <div class="edit-profile-fields">
+            <div class="form-group">
+              <label>College / University</label>
+              <input type="text" id="editCollege" placeholder="e.g. Hollywood Arts University" maxlength="80" />
+            </div>
+            <div class="form-group">
+              <label>Industry</label>
+              <select id="editIndustry">
+                <option value="">— Select —</option>
+                <option value="Arts & Entertainment">Arts & Entertainment</option>
+                <option value="Business">Business</option>
+                <option value="Education">Education</option>
+                <option value="Finance">Finance</option>
+                <option value="Government">Government</option>
+                <option value="Healthcare / Medical">Healthcare / Medical</option>
+                <option value="Law">Law</option>
+                <option value="Media & Communications">Media & Communications</option>
+                <option value="Non-profit">Non-profit</option>
+                <option value="Science & Research">Science & Research</option>
+                <option value="Sports & Fitness">Sports & Fitness</option>
+                <option value="Tech">Tech</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-post" id="saveProfileBtn">Save Changes</button>
+          <span class="save-confirm hidden" id="saveConfirm">✓ Saved!</span>
+        </div>
+
         <div class="posts-feed" id="myPostsFeed">
           <div class="loading-spinner"><div class="spinner"></div></div>
         </div>
@@ -264,6 +300,22 @@
         <div class="form-error hidden" id="signupError"></div>
         <button type="submit" class="btn btn-post full-width">Join The Spark!</button>
       </form>
+    </div>
+  </div>
+
+  <!-- CROP MODAL -->
+  <div class="modal-overlay hidden" id="cropModal">
+    <div class="crop-modal card">
+      <button class="modal-close" id="cropModalClose">&times;</button>
+      <h3 class="crop-modal-title">📷 Crop Your Photo</h3>
+      <p class="crop-modal-hint">Drag to reposition · Pinch or scroll to zoom</p>
+      <div class="crop-container">
+        <img id="cropImage" alt="Crop preview" />
+      </div>
+      <div class="crop-actions">
+        <button class="btn btn-logout" id="cropCancel">Cancel</button>
+        <button class="btn btn-post"   id="cropConfirm">✓ Save Photo</button>
+      </div>
     </div>
   </div>
 

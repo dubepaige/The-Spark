@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import Cropper from 'https://esm.sh/cropperjs@1.6.1'
 
 // ===== CONFIG =====
 const SUPABASE_URL      = 'https://jqrefxdumksvddrohmts.supabase.co'
@@ -11,6 +12,7 @@ let currentProfile = null
 let activePage     = 'feed'
 let sparkedPosts   = new Set()
 let pendingFile    = null   // file selected for upload
+let cropperInstance = null  // Cropper.js instance
 
 // ===== INIT =====
 async function init() {
@@ -26,6 +28,7 @@ async function init() {
   setupAuthModal()
   setupNav()
   setupHamburger()
+  setupCropModal()
   await navigateTo('feed')
   await loadWhoList()
 }
@@ -93,6 +96,8 @@ async function setUser(user) {
   document.getElementById('logoutBtn').addEventListener('click', signOut)
   document.getElementById('headerUserInfo').addEventListener('click', () => navigateTo('myprofile'))
 
+  setEl('sidebarName',   currentProfile?.full_name || currentProfile?.username || '')
+  setEl('sidebarHandle', `@${currentProfile?.username || ''}`)
   refreshAvatarDisplays()
   document.getElementById('postBtn').disabled = false
   await loadUserStats()
@@ -427,11 +432,16 @@ async function loadProfiles() {
       ? `<img src="${p.avatar_url}" alt="${letter}" />`
       : letter
 
+    const metaParts = []
+    if (p.college)  metaParts.push(`🎓 ${escapeHtml(p.college)}`)
+    if (p.industry) metaParts.push(`💼 ${escapeHtml(p.industry)}`)
+
     card.innerHTML = `
       <div class="avatar-circle profile-card-avatar" style="background:${p.avatar_url ? 'none' : colorFromLetter(letter)}">${avatarInner}</div>
       <div class="profile-card-name">${escapeHtml(p.full_name || p.username)}</div>
       <div class="profile-card-handle">@${escapeHtml(p.username)}</div>
       <div class="profile-card-posts">${postCount} post${postCount !== 1 ? 's' : ''}</div>
+      ${metaParts.length ? `<div class="profile-card-meta">${metaParts.join(' · ')}</div>` : ''}
     `
     card.addEventListener('click', () => openProfileDetail(p))
     grid.appendChild(card)
@@ -455,6 +465,16 @@ async function openProfileDetail(profile) {
   }
   setEl('detailName',   profile.full_name || profile.username)
   setEl('detailHandle', `@${profile.username}`)
+
+  // College / industry
+  const detailMetaEl = document.getElementById('detailMeta')
+  if (detailMetaEl) {
+    const parts = []
+    if (profile.college)  parts.push(`🎓 ${escapeHtml(profile.college)}`)
+    if (profile.industry) parts.push(`💼 ${escapeHtml(profile.industry)}`)
+    detailMetaEl.textContent = parts.join('  ·  ')
+    detailMetaEl.classList.toggle('hidden', parts.length === 0)
+  }
 
   // Follower count
   const { count: followerCount } = await supabase
@@ -532,9 +552,28 @@ async function loadMyProfile() {
   document.getElementById('myStatFollowers').onclick = () => openFollowsModal('followers')
   document.getElementById('myStatPosts').onclick     = null
 
-  // Avatar upload
+  // College / Industry edit fields
+  const editCollege  = document.getElementById('editCollege')
+  const editIndustry = document.getElementById('editIndustry')
+  if (editCollege)  editCollege.value  = currentProfile?.college  || ''
+  if (editIndustry) editIndustry.value = currentProfile?.industry || ''
+
+  // Meta line display (college / industry)
+  const metaEl = document.getElementById('myProfileMeta')
+  if (metaEl) {
+    const parts = []
+    if (currentProfile?.college)  parts.push(`🎓 ${currentProfile.college}`)
+    if (currentProfile?.industry) parts.push(`💼 ${currentProfile.industry}`)
+    metaEl.textContent   = parts.join('  ·  ')
+    metaEl.style.display = parts.length ? '' : 'none'
+  }
+
+  // Save profile button
+  document.getElementById('saveProfileBtn').onclick = saveProfile
+
+  // Avatar upload → opens crop modal instead of uploading directly
   const avatarInput = document.getElementById('avatarFileInput')
-  avatarInput.onchange = handleAvatarUpload
+  avatarInput.onchange = handleAvatarFileSelect
 
   // My posts
   const feed = document.getElementById('myPostsFeed')
@@ -553,25 +592,103 @@ async function loadMyProfile() {
   posts.forEach(post => feed.appendChild(renderPost(post, true)))
 }
 
-// ===== AVATAR UPLOAD =====
-async function handleAvatarUpload(e) {
+// ===== AVATAR UPLOAD + CROP =====
+function handleAvatarFileSelect(e) {
   const file = e.target.files[0]
   if (!file || !currentUser) return
+  const reader = new FileReader()
+  reader.onload = ev => openCropModal(ev.target.result)
+  reader.readAsDataURL(file)
+  e.target.value = '' // reset so same file can be re-selected
+}
 
-  const ext  = file.name.split('.').pop().toLowerCase()
-  const path = `${currentUser.id}/avatar.${ext}`
+function openCropModal(src) {
+  const modal = document.getElementById('cropModal')
+  const img   = document.getElementById('cropImage')
+  if (cropperInstance) { cropperInstance.destroy(); cropperInstance = null }
+  img.src = src
+  modal.classList.remove('hidden')
+  img.onload = () => {
+    cropperInstance = new Cropper(img, {
+      aspectRatio: 1,
+      viewMode: 1,
+      dragMode: 'move',
+      autoCropArea: 0.9,
+      cropBoxMovable: false,
+      cropBoxResizable: false,
+      toggleDragModeOnDblclick: false,
+      guides: false,
+      center: false,
+      highlight: false,
+      background: false,
+    })
+  }
+}
 
-  const { error } = await supabase.storage
-    .from('avatars').upload(path, file, { upsert: true, contentType: file.type })
+function closeCropModal() {
+  if (cropperInstance) { cropperInstance.destroy(); cropperInstance = null }
+  document.getElementById('cropModal').classList.add('hidden')
+  document.getElementById('cropImage').src = ''
+}
 
-  if (error) { alert('Avatar upload failed: ' + error.message); return }
+async function confirmCrop() {
+  if (!cropperInstance || !currentUser) return
+  const btn = document.getElementById('cropConfirm')
+  btn.textContent = 'Saving…'; btn.disabled = true
 
-  const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
+  const canvas = cropperInstance.getCroppedCanvas({ width: 400, height: 400 })
+  canvas.toBlob(async blob => {
+    const path = `${currentUser.id}/avatar.jpg`
+    const { error } = await supabase.storage
+      .from('avatars').upload(path, blob, { upsert: true, contentType: 'image/jpeg' })
 
-  await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', currentUser.id)
-  currentProfile.avatar_url = publicUrl
-  refreshAvatarDisplays()
-  await loadMyProfile()
+    btn.textContent = '✓ Save Photo'; btn.disabled = false
+    if (error) { alert('Upload failed: ' + error.message); return }
+
+    const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
+    await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', currentUser.id)
+    currentProfile.avatar_url = publicUrl
+    refreshAvatarDisplays()
+    closeCropModal()
+    await loadMyProfile()
+  }, 'image/jpeg', 0.92)
+}
+
+function setupCropModal() {
+  document.getElementById('cropModalClose').addEventListener('click', closeCropModal)
+  document.getElementById('cropCancel').addEventListener('click',    closeCropModal)
+  document.getElementById('cropConfirm').addEventListener('click',   confirmCrop)
+  document.getElementById('cropModal').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeCropModal()
+  })
+}
+
+// ===== SAVE PROFILE =====
+async function saveProfile() {
+  if (!currentUser) return
+  const college  = (document.getElementById('editCollege')?.value  || '').trim()
+  const industry =  document.getElementById('editIndustry')?.value || ''
+
+  const { error } = await supabase.from('profiles')
+    .update({ college, industry }).eq('id', currentUser.id)
+
+  if (!error) {
+    currentProfile.college  = college
+    currentProfile.industry = industry
+    const confirmEl = document.getElementById('saveConfirm')
+    if (confirmEl) {
+      confirmEl.classList.remove('hidden')
+      setTimeout(() => confirmEl.classList.add('hidden'), 2500)
+    }
+    const metaEl = document.getElementById('myProfileMeta')
+    if (metaEl) {
+      const parts = []
+      if (college)  parts.push(`🎓 ${college}`)
+      if (industry) parts.push(`💼 ${industry}`)
+      metaEl.textContent   = parts.join('  ·  ')
+      metaEl.style.display = parts.length ? '' : 'none'
+    }
+  }
 }
 
 // ===== FOLLOWS =====

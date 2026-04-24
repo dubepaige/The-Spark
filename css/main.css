@@ -555,6 +555,72 @@ body {
 .follow-item-name   { font-weight: 700; font-size: 0.9rem; }
 .follow-item-handle { color: var(--text-muted); font-size: 0.8rem; }
 
+/* ===== EDIT PROFILE CARD ===== */
+.edit-profile-card { padding: 20px; }
+.edit-profile-title {
+  font-family: 'Bangers', cursive; font-size: 1.25rem; color: var(--purple-light);
+  letter-spacing: 0.5px; margin-bottom: 14px;
+}
+.edit-profile-fields {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;
+}
+.form-group select {
+  background: rgba(255,255,255,0.05); border: 1px solid var(--card-border);
+  border-radius: var(--radius-sm); color: var(--text);
+  font-family: 'Nunito', sans-serif; font-size: 0.92rem; padding: 10px 12px;
+  min-height: 42px; cursor: pointer; transition: border-color 0.2s; width: 100%;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238B5CF6' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center;
+  padding-right: 32px;
+}
+.form-group select:focus { outline: none; border-color: var(--purple); box-shadow: 0 0 0 2px rgba(139,92,246,0.15); }
+.form-group select option { background: #12121F; color: var(--text); }
+.save-confirm {
+  color: var(--neon-green); font-weight: 700; font-size: 0.88rem;
+  margin-left: 12px; filter: drop-shadow(0 0 5px rgba(57,255,20,0.5));
+}
+
+/* Profile meta (college / industry) */
+.my-profile-meta {
+  font-size: 0.82rem; color: var(--text-muted); margin-bottom: 10px;
+  font-weight: 600; letter-spacing: 0.2px;
+}
+.profile-detail-meta {
+  font-size: 0.82rem; color: var(--text-muted); font-weight: 600; margin-top: 4px;
+}
+.profile-card-meta {
+  font-size: 0.74rem; color: var(--text-muted); margin-top: 5px;
+  line-height: 1.4; word-break: break-word;
+}
+
+/* ===== CROP MODAL ===== */
+.crop-modal {
+  width: 100%; max-width: 540px; padding: 24px; position: relative;
+}
+.crop-modal-title {
+  font-family: 'Bangers', cursive; font-size: 1.45rem; color: var(--purple-light);
+  letter-spacing: 0.5px; margin-bottom: 4px;
+}
+.crop-modal-hint {
+  font-size: 0.78rem; color: var(--text-muted); margin-bottom: 14px;
+}
+.crop-container {
+  width: 100%; max-height: 380px; background: #000;
+  border-radius: var(--radius-sm); overflow: hidden;
+  border: 1px solid var(--card-border);
+}
+.crop-container img { display: block; max-width: 100%; }
+.crop-actions {
+  display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;
+}
+
+/* Make Cropper.js crop box circular */
+.cropper-view-box,
+.cropper-face { border-radius: 50%; }
+.cropper-view-box { box-shadow: 0 0 0 1px var(--neon-pink), 0 0 0 9999px rgba(0,0,0,0.5); outline: none; }
+.cropper-face { background-color: transparent; }
+
 /* ===== UTILITIES ===== */
 .hidden { display: none !important; }
 
@@ -574,42 +640,69 @@ body {
   /* Show hamburger, hide desktop nav */
   .header-nav  { display: none; }
   .hamburger   { display: flex; }
-  .btn-login, .btn-signup { font-size: 0.8rem; padding: 6px 12px; }
+
+  /* Shrink header buttons */
+  .btn-login  { font-size: 0.78rem; padding: 6px 10px; min-height: 34px; }
+  .btn-signup { font-size: 0.78rem; padding: 6px 10px; min-height: 34px; }
+  .btn-logout { font-size: 0.75rem; padding: 5px 10px; min-height: 30px; }
+  .header-username { display: none; }  /* avatar only on mobile */
+  .header-inner { gap: 10px; padding: 0 12px; }
 
   /* Single column layout */
-  .site-wrapper { grid-template-columns: 1fr; padding: 12px; gap: 12px; }
+  .site-wrapper { grid-template-columns: 1fr; padding: 10px; gap: 10px; }
   .sidebar { display: none; } /* sidebar hidden on mobile — info in My Profile */
 
   /* Feed */
-  .composer { padding: 14px; }
+  .composer { padding: 12px; }
   .composer-top { gap: 8px; }
   .composer-avatar { width: 36px; height: 36px; }
-  .composer-bottom { padding-left: 44px; }
+  .composer-bottom { padding-left: 44px; flex-wrap: wrap; gap: 6px; }
   .media-preview { margin-left: 44px; }
+  .feeling-select { font-size: 0.88rem; }
 
   /* Posts */
-  .post { padding: 14px; }
+  .post { padding: 12px; }
   .post-avatar { width: 36px; height: 36px; }
+  .post-feeling { font-size: 1.1rem; }
+  .post-actions { gap: 4px; }
+  .action-btn { padding: 6px 8px; font-size: 0.78rem; }
 
-  /* Grids → single column */
+  /* Grids */
   .videos-grid   { grid-template-columns: 1fr; }
-  .profiles-grid { grid-template-columns: repeat(2, 1fr); }
+  .profiles-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .profile-card  { padding: 14px 10px; }
+  .profile-card-avatar { width: 48px; height: 48px; font-size: 1.2rem; }
 
   /* My profile */
-  .my-profile-header { padding: 16px; gap: 14px; }
+  .my-profile-header { padding: 14px; gap: 12px; }
   .my-avatar { width: 64px; height: 64px; font-size: 1.6rem; }
   .my-avatar-wrap { width: 64px; height: 64px; }
-
-  /* Modal full-width */
-  .modal { padding: 20px; }
-
-  /* Profile detail */
-  .profile-detail-header { padding: 14px; }
-}
-
-@media (max-width: 380px) {
-  .logo-slap { font-size: 1.5rem; }
-  .profiles-grid { grid-template-columns: 1fr; }
   .my-profile-stats { gap: 6px; }
   .stat-chip { font-size: 0.78rem; padding: 5px 10px; }
+
+  /* Edit profile — stack columns */
+  .edit-profile-fields { grid-template-columns: 1fr; }
+  .edit-profile-card { padding: 14px; }
+
+  /* Profile detail */
+  .profile-detail-header { padding: 14px; gap: 12px; }
+  .profile-detail-avatar { width: 58px; height: 58px; font-size: 1.4rem; }
+  .profile-detail-name   { font-size: 1.1rem; }
+
+  /* Modals */
+  .modal      { padding: 18px; }
+  .crop-modal { padding: 16px; }
+  .crop-container { max-height: 300px; }
+
+  /* Comments */
+  .comment-composer { flex-wrap: wrap; }
+  .btn-comment-submit { width: 100%; border-radius: var(--radius-sm); }
+}
+
+@media (max-width: 420px) {
+  .logo-slap { font-size: 1.5rem; }
+  .profiles-grid { grid-template-columns: 1fr; }
+  .my-profile-stats { flex-wrap: wrap; }
+  .header-user { gap: 4px; }
+  .composer-bottom { padding-left: 0; }
 }
