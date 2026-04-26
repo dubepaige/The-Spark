@@ -39,7 +39,7 @@ async function init() {
   setupSearch()
   setupFeedTabs()
   await navigateTo('feed')
-  await loadWhoList()
+  await Promise.all([loadWhoList(), loadTopHashtags()])
 }
 
 // ===== NAV / ROUTING =====
@@ -1191,6 +1191,40 @@ async function loadWhoList() {
     `
     li.addEventListener('click', async () => { await navigateTo('profiles'); await openProfileDetail(p) })
     list.appendChild(li)
+  })
+}
+
+// ===== TOP HASHTAGS SIDEBAR =====
+async function loadTopHashtags() {
+  const el = document.getElementById('topHashtags')
+  if (!el) return
+
+  const { data: posts } = await supabase
+    .from('posts').select('content').not('content', 'is', null)
+    .order('created_at', { ascending: false }).limit(300)
+
+  const counts = {}
+  const re = /#(\w+)/g
+  for (const post of posts || []) {
+    let m
+    re.lastIndex = 0
+    while ((m = re.exec(post.content)) !== null) {
+      const tag = m[1].toLowerCase()
+      counts[tag] = (counts[tag] || 0) + 1
+    }
+  }
+
+  const PLACEHOLDERS = ['spark','vibing','mood','iconic','aesthetic','obsessed','drama','nofilter','goals','blessed']
+  const top = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([t]) => t)
+  const tags = top.length >= 3 ? top : PLACEHOLDERS
+
+  el.innerHTML = tags.map(tag =>
+    `<span class="tag tag-hashtag" data-tag="${escapeHtml(tag)}">#${escapeHtml(tag)}</span>`
+  ).join('')
+
+  el.querySelectorAll('.tag-hashtag').forEach(chip => {
+    chip.style.cursor = 'pointer'
+    chip.addEventListener('click', () => navigateTo('feed').then(() => loadFeed(chip.dataset.tag)))
   })
 }
 

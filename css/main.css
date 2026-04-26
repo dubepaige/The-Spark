@@ -257,6 +257,10 @@ body {
   font-size: 0.78rem; font-weight: 700; cursor: pointer; transition: all 0.2s;
 }
 .tag:hover { background: rgba(255,16,240,0.15); border-color: var(--neon-pink); color: var(--neon-pink); }
+.tag-hashtag {
+  background: rgba(34,211,238,0.08); border-color: rgba(34,211,238,0.25); color: var(--cyan);
+}
+.tag-hashtag:hover { background: rgba(34,211,238,0.18); border-color: var(--cyan); color: var(--cyan); }
 
 /* ===== PAGE SYSTEM ===== */
 .page { display: flex; flex-direction: column; gap: 14px; }
