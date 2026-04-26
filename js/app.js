@@ -18,6 +18,7 @@ let activeHashtag   = null   // hashtag currently filtering the feed
 let activeConvoId   = null   // profile ID of open DM conversation
 let msgChannel      = null   // Supabase Realtime channel
 let postIsPrivate   = false  // privacy state for the composer
+let feedTab         = 'explore' // 'explore' | 'following'
 
 // ===== INIT =====
 async function init() {
@@ -36,6 +37,7 @@ async function init() {
   setupCropModal()
   setupSuggestionsModal()
   setupSearch()
+  setupFeedTabs()
   await navigateTo('feed')
   await loadWhoList()
 }
@@ -408,17 +410,39 @@ async function submitPost() {
   }
 }
 
+// ===== FEED TABS =====
+function setupFeedTabs() {
+  document.querySelectorAll('.feed-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.feed-tab').forEach(b => b.classList.remove('active'))
+      btn.classList.add('active')
+      feedTab = btn.dataset.tab
+      activeHashtag = null
+      loadFeed()
+    })
+  })
+}
+
 // ===== FEED PAGE =====
 async function loadFeed(tag = activeHashtag) {
   activeHashtag = tag
   const feed = document.getElementById('postsFeed')
   feed.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>'
 
+  // Following tab: gate on login
+  if (feedTab === 'following' && !currentUser) {
+    feed.innerHTML = ''
+    feed.appendChild(document.createRange().createContextualFragment(
+      emptyState('👥', 'Log in to see your Following feed', "Follow people to see their posts here.")
+    ))
+    return
+  }
+
   const { data: posts, error } = await supabase
     .from('posts')
-    .select('*, profiles(id, username, full_name, avatar_letter, avatar_url, is_private, birthday)')
+    .select('*, profiles(id, username, full_name, avatar_letter, avatar_url, is_private, birthday, college, industry)')
     .order('created_at', { ascending: false })
-    .limit(100)
+    .limit(150)
 
   feed.innerHTML = ''
 
@@ -434,21 +458,48 @@ async function loadFeed(tag = activeHashtag) {
 
   let visible = posts || []
 
-  // Filter private accounts (hide posts from private accounts viewer doesn't follow)
+  // Filter private accounts
   visible = visible.filter(post => {
-    if (!post.profiles?.is_private) return true
-    if (!currentUser)               return false
+    if (!post.profiles?.is_private)      return true
+    if (!currentUser)                    return false
     if (post.user_id === currentUser.id) return true
     return followingIds.has(post.user_id)
   })
 
-  // Filter private posts (individual posts marked private)
+  // Filter private posts
   visible = visible.filter(post => {
-    if (!post.is_private)           return true
-    if (!currentUser)               return false
+    if (!post.is_private)                return true
+    if (!currentUser)                    return false
     if (post.user_id === currentUser.id) return true
     return followingIds.has(post.user_id)
   })
+
+  // Following tab: only posts from followed users + own
+  if (feedTab === 'following') {
+    visible = visible.filter(post =>
+      post.user_id === currentUser.id || followingIds.has(post.user_id)
+    )
+    if (!visible.length) {
+      feed.appendChild(document.createRange().createContextualFragment(
+        emptyState('👥', 'Nothing here yet', "Follow some people to see their posts.")
+      ))
+      return
+    }
+  }
+
+  // Explore tab: sort by relevance (same college/industry first), then newest
+  if (feedTab === 'explore' && currentProfile) {
+    visible.sort((a, b) => {
+      const score = p => {
+        let s = 0
+        if (currentProfile.college  && p.profiles?.college  === currentProfile.college)  s += 2
+        if (currentProfile.industry && p.profiles?.industry === currentProfile.industry) s += 1
+        return s
+      }
+      const diff = score(b) - score(a)
+      return diff !== 0 ? diff : new Date(b.created_at) - new Date(a.created_at)
+    })
+  }
 
   // Filter by hashtag
   if (tag) {
@@ -917,6 +968,22 @@ async function openFollowsModal(type) {
   })
 }
 
+// ===== TOGGLE POST PRIVACY =====
+async function togglePostPrivacy(postId, btn, article) {
+  if (!currentUser) return
+  const nowPrivate = btn.dataset.private === 'true'
+  const newPrivate = !nowPrivate
+  const { error } = await supabase.from('posts')
+    .update({ is_private: newPrivate })
+    .eq('id', postId).eq('user_id', currentUser.id)
+  if (error) return
+  btn.dataset.private = String(newPrivate)
+  btn.textContent = newPrivate ? '🔒 Private' : '🌍 Public'
+  btn.classList.toggle('is-private', newPrivate)
+  const badge = article.querySelector('.post-private-badge')
+  if (badge) badge.classList.toggle('hidden', !newPrivate)
+}
+
 // ===== DELETE POST =====
 async function deletePost(postId, articleEl) {
   if (!currentUser) return
@@ -986,15 +1053,22 @@ function renderPost(post, showDelete = false) {
     }
   }
 
-  // Delete button (own posts or showDelete flag)
+  // Delete button + privacy toggle (own posts only)
   const isOwn = currentUser && (currentUser.id === post.user_id || currentUser.id === profile.id)
   if (isOwn || showDelete) {
     const delBtn = el.querySelector('.post-delete-btn')
     delBtn.classList.remove('hidden')
     delBtn.addEventListener('click', () => deletePost(post.id, article))
+
+    const privBtn = el.querySelector('.post-toggle-privacy')
+    privBtn.classList.remove('hidden')
+    privBtn.textContent = post.is_private ? '🔒 Private' : '🌍 Public'
+    privBtn.dataset.private = String(!!post.is_private)
+    if (post.is_private) privBtn.classList.add('is-private')
+    privBtn.addEventListener('click', () => togglePostPrivacy(post.id, privBtn, article))
   }
 
-  // Private post badge
+  // Private post badge (visible to everyone who can see the post)
   if (post.is_private) {
     const badge = el.querySelector('.post-private-badge')
     if (badge) badge.classList.remove('hidden')
