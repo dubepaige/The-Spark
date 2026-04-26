@@ -691,13 +691,21 @@ async function openProfileDetail(profile) {
     .eq('user_id', profile.id)
     .order('created_at', { ascending: false })
 
-  setEl('detailPostCount', posts?.length ?? 0)
+  // Filter private posts — same rules as the feed
+  const visible = (posts || []).filter(post => {
+    if (!post.is_private)                return true
+    if (!currentUser)                    return false
+    if (post.user_id === currentUser.id) return true
+    return followingIds.has(post.user_id)
+  })
+
+  setEl('detailPostCount', visible.length)
   feed.innerHTML = ''
-  if (!posts?.length) {
+  if (!visible.length) {
     feed.innerHTML = emptyState('🌟', 'No posts yet!', '')
     return
   }
-  posts.forEach(post => feed.appendChild(renderPost(post)))
+  visible.forEach(post => feed.appendChild(renderPost(post)))
 
   document.getElementById('backToProfiles').onclick = loadProfiles
 }

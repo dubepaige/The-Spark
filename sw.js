@@ -1,5 +1,5 @@
 // ===== The Spark — Service Worker =====
-const CACHE   = 'spark-v1'
+const CACHE   = 'spark-v3'
 const SHELL   = [
   '/The-Spark/',
   '/The-Spark/css/main.css',
