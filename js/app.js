@@ -17,6 +17,7 @@ let followingIds    = new Set() // profile IDs currentUser follows
 let activeHashtag   = null   // hashtag currently filtering the feed
 let activeConvoId   = null   // profile ID of open DM conversation
 let msgChannel      = null   // Supabase Realtime channel
+let postIsPrivate   = false  // privacy state for the composer
 
 // ===== INIT =====
 async function init() {
@@ -269,7 +270,47 @@ function setupComposer() {
   const preview    = document.getElementById('mediaPreview')
   const removeBtn  = document.getElementById('mediaRemove')
 
-  const checkReady = () => { postBtn.disabled = !currentUser || !select.value }
+  const customRow   = document.getElementById('customFeelingRow')
+  const customInput = document.getElementById('customFeelingInput')
+  const emojiBtn    = document.getElementById('emojiPickerBtn')
+  const emojiPicker = document.getElementById('emojiPicker')
+  const privacyBtn  = document.getElementById('postPrivacyBtn')
+
+  const checkReady = () => {
+    const isCustom = select.value === '__custom__'
+    const feeling  = isCustom ? customInput.value.trim() : select.value
+    postBtn.disabled = !currentUser || !feeling
+  }
+
+  // Emoji picker
+  const EMOJIS = ['😊','😂','😍','🥰','😎','🤩','🥳','😜','🤪','😴','😢','😤','😬','😅','🤔','😈','🤓','👑','💅','⚡','✨','🌟','💕','💀','🔥','🎉','🎭','🎵','🎨','🏆','🍕','☕','🌈','🫶','💪','👀','😏','🤭','🫠','🙃']
+  emojiPicker.innerHTML = EMOJIS.map(e => `<button type="button" class="emoji-opt">${e}</button>`).join('')
+  emojiPicker.querySelectorAll('.emoji-opt').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation()
+      customInput.value += btn.textContent
+      emojiPicker.classList.add('hidden')
+      customInput.focus()
+      checkReady()
+    })
+  })
+  emojiBtn.addEventListener('click', e => { e.stopPropagation(); emojiPicker.classList.toggle('hidden') })
+  document.addEventListener('click', () => emojiPicker.classList.add('hidden'))
+  customInput.addEventListener('input', checkReady)
+
+  select.addEventListener('change', () => {
+    const isCustom = select.value === '__custom__'
+    customRow.classList.toggle('hidden', !isCustom)
+    if (isCustom) customInput.focus()
+    checkReady()
+  })
+
+  // Post privacy toggle
+  privacyBtn.addEventListener('click', () => {
+    postIsPrivate = !postIsPrivate
+    privacyBtn.textContent = postIsPrivate ? '🔒 Followers only' : '🌍 Public'
+    privacyBtn.classList.toggle('privacy-private', postIsPrivate)
+  })
 
   input.addEventListener('input', () => {
     const rem = 280 - input.value.length
@@ -277,7 +318,6 @@ function setupComposer() {
     charCount.className   = 'char-count' + (rem < 20 ? ' danger' : rem < 60 ? ' warning' : '')
     checkReady()
   })
-  select.addEventListener('change', checkReady)
 
   fileInput.addEventListener('change', () => {
     const file = fileInput.files[0]
@@ -312,8 +352,11 @@ function setupComposer() {
 
 async function submitPost() {
   if (!currentUser) return
-  const feeling = document.getElementById('feelingSelect').value
-  const content = document.getElementById('composerInput').value.trim()
+  const isCustom = document.getElementById('feelingSelect').value === '__custom__'
+  const feeling  = isCustom
+    ? document.getElementById('customFeelingInput').value.trim()
+    : document.getElementById('feelingSelect').value
+  const content  = document.getElementById('composerInput').value.trim()
   if (!feeling) return
 
   const postBtn = document.getElementById('postBtn')
@@ -339,13 +382,18 @@ async function submitPost() {
   }
 
   const { error } = await supabase.from('posts').insert({
-    user_id: currentUser.id, feeling, content, media_url, media_type
+    user_id: currentUser.id, feeling, content, media_url, media_type, is_private: postIsPrivate
   })
 
   postBtn.textContent = 'Spark it!'
 
   if (!error) {
     document.getElementById('feelingSelect').value = ''
+    document.getElementById('customFeelingRow').classList.add('hidden')
+    document.getElementById('customFeelingInput').value = ''
+    document.getElementById('postPrivacyBtn').textContent = '🌍 Public'
+    document.getElementById('postPrivacyBtn').classList.remove('privacy-private')
+    postIsPrivate = false
     document.getElementById('composerInput').value = ''
     document.getElementById('mediaPreview').classList.add('hidden')
     document.getElementById('mediaRemove').click()
@@ -389,6 +437,14 @@ async function loadFeed(tag = activeHashtag) {
   // Filter private accounts (hide posts from private accounts viewer doesn't follow)
   visible = visible.filter(post => {
     if (!post.profiles?.is_private) return true
+    if (!currentUser)               return false
+    if (post.user_id === currentUser.id) return true
+    return followingIds.has(post.user_id)
+  })
+
+  // Filter private posts (individual posts marked private)
+  visible = visible.filter(post => {
+    if (!post.is_private)           return true
     if (!currentUser)               return false
     if (post.user_id === currentUser.id) return true
     return followingIds.has(post.user_id)
@@ -936,6 +992,12 @@ function renderPost(post, showDelete = false) {
     const delBtn = el.querySelector('.post-delete-btn')
     delBtn.classList.remove('hidden')
     delBtn.addEventListener('click', () => deletePost(post.id, article))
+  }
+
+  // Private post badge
+  if (post.is_private) {
+    const badge = el.querySelector('.post-private-badge')
+    if (badge) badge.classList.remove('hidden')
   }
 
   // Spark (like)

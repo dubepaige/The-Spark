@@ -703,6 +703,58 @@ body {
 .toggle-text { font-size: 0.88rem; font-weight: 700; color: var(--text); }
 .toggle-hint  { font-size: 0.76rem; color: var(--text-muted); margin-top: 4px; }
 
+/* ===== CUSTOM FEELING & EMOJI PICKER ===== */
+.custom-feeling-row {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 6px;
+}
+.custom-feeling-input {
+  flex: 1; background: rgba(255,255,255,0.06); border: 1.5px solid var(--card-border);
+  border-radius: var(--radius-sm); color: var(--text);
+  font-family: 'Nunito', sans-serif; font-size: 0.92rem; font-weight: 700;
+  padding: 8px 12px; outline: none; transition: border-color 0.2s;
+}
+.custom-feeling-input:focus { border-color: var(--purple); }
+.custom-feeling-input::placeholder { color: var(--text-muted); }
+
+.emoji-picker-wrap { position: relative; flex-shrink: 0; }
+.emoji-picker-btn {
+  background: rgba(255,255,255,0.07); border: 1.5px solid var(--card-border);
+  border-radius: var(--radius-sm); padding: 7px 10px;
+  cursor: pointer; font-size: 1.1rem; transition: border-color 0.2s;
+}
+.emoji-picker-btn:hover { border-color: var(--purple); }
+
+.emoji-picker {
+  position: absolute; bottom: calc(100% + 6px); right: 0;
+  background: var(--card-bg); border: 1.5px solid var(--card-border);
+  border-radius: var(--radius-sm); padding: 10px;
+  display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px;
+  width: 260px; z-index: 300;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+.emoji-opt {
+  background: none; border: none; font-size: 1.2rem; cursor: pointer;
+  padding: 4px; border-radius: 6px; line-height: 1; transition: background 0.15s;
+}
+.emoji-opt:hover { background: rgba(139,92,246,0.25); }
+
+/* ===== POST PRIVACY BUTTON ===== */
+.post-privacy-btn {
+  font-size: 0.8rem; font-weight: 700; color: var(--text-muted);
+  background: rgba(255,255,255,0.05); border: 1.5px solid var(--card-border);
+  border-radius: 20px; padding: 5px 12px; cursor: pointer;
+  font-family: 'Nunito', sans-serif; transition: all 0.2s;
+}
+.post-privacy-btn:hover { color: var(--cyan); border-color: var(--cyan); }
+.post-privacy-btn.privacy-private { color: var(--purple-light); border-color: var(--purple); background: rgba(139,92,246,0.12); }
+
+/* ===== POST PRIVATE BADGE ===== */
+.post-private-badge {
+  font-size: 0.75rem; margin-left: auto; color: var(--purple-light);
+  opacity: 0.8; flex-shrink: 0; line-height: 1;
+}
+
 /* ===== DM BUTTON ===== */
 .btn-dm {
   background: linear-gradient(135deg, var(--cyan-dark), var(--cyan));

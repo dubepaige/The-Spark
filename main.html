@@ -138,7 +138,15 @@
                 <option value="Sad 😢">Sad 😢</option>
                 <option value="Angry 😤">Angry 😤</option>
                 <option value="Bored 😴">Bored 😴</option>
+                <option value="__custom__">✏️ Custom feeling…</option>
               </select>
+              <div class="custom-feeling-row hidden" id="customFeelingRow">
+                <input type="text" id="customFeelingInput" class="custom-feeling-input" placeholder="e.g. Obsessed" maxlength="40" />
+                <div class="emoji-picker-wrap">
+                  <button type="button" class="emoji-picker-btn" id="emojiPickerBtn" title="Pick an emoji">😊</button>
+                  <div class="emoji-picker hidden" id="emojiPicker"></div>
+                </div>
+              </div>
               <textarea class="composer-input" id="composerInput"
                 placeholder="Tell everyone why…" maxlength="280"></textarea>
             </div>
@@ -153,6 +161,7 @@
 
           <div class="composer-bottom">
             <div class="composer-options">
+              <button type="button" class="composer-opt post-privacy-btn" id="postPrivacyBtn" title="Who can see this post">🌍 Public</button>
               <label class="composer-opt" for="mediaFileInput" title="Add photo or video">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                 Photo / Video
@@ -459,6 +468,7 @@
           <span class="post-time"></span>
         </div>
         <button class="post-delete-btn hidden" title="Delete post">🗑</button>
+        <span class="post-private-badge hidden" title="Private post">🔒</span>
       </div>
       <div class="post-body">
         <div class="post-feeling"></div>
