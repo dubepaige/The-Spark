@@ -35,8 +35,13 @@
         <a href="#" class="nav-link active" data-page="feed">Feed</a>
         <a href="#" class="nav-link"        data-page="videos">Videos</a>
         <a href="#" class="nav-link"        data-page="profiles">Profiles</a>
+        <a href="#" class="nav-link"        data-page="games">🎮 Games</a>
+        <a href="#" class="nav-link"        data-page="about">About</a>
+        <a href="#" class="nav-link nav-messages hidden" data-page="messages">💬 DMs</a>
         <a href="#" class="nav-link nav-myprofile hidden" data-page="myprofile">My Profile</a>
       </nav>
+
+      <button class="search-btn" id="searchBtn" title="Search">🔍</button>
 
       <div class="header-user" id="headerUser">
         <button class="btn btn-login"  id="loginBtn">Log In</button>
@@ -54,6 +59,9 @@
       <a href="#" class="mobile-nav-link" data-page="feed">⚡ Feed</a>
       <a href="#" class="mobile-nav-link" data-page="videos">🎬 Videos</a>
       <a href="#" class="mobile-nav-link" data-page="profiles">✨ Profiles</a>
+      <a href="#" class="mobile-nav-link" data-page="games">🎮 Games</a>
+      <a href="#" class="mobile-nav-link" data-page="about">ℹ️ About</a>
+      <a href="#" class="mobile-nav-link mobile-messages hidden" data-page="messages">💬 DMs</a>
       <a href="#" class="mobile-nav-link mobile-myprofile hidden" data-page="myprofile">👤 My Profile</a>
     </div>
   </header>
@@ -196,6 +204,7 @@
                 <span id="detailFollowerCount">0</span> followers
               </div>
               <button class="btn-follow hidden" id="followBtn">Follow</button>
+              <button class="btn-dm     hidden" id="dmBtn">💬 Message</button>
             </div>
           </div>
           <div class="posts-feed" id="profilePostsFeed"></div>
@@ -252,6 +261,15 @@
               </select>
             </div>
           </div>
+          <div class="form-group private-toggle-group">
+            <label>Account Privacy</label>
+            <label class="toggle-label">
+              <input type="checkbox" id="privateToggle" />
+              <span class="toggle-slider"></span>
+              <span class="toggle-text">Private account 🔒</span>
+            </label>
+            <p class="toggle-hint">When on, only your followers can see your posts.</p>
+          </div>
           <button class="btn btn-post" id="saveProfileBtn">Save Changes</button>
           <span class="save-confirm hidden" id="saveConfirm">✓ Saved!</span>
         </div>
@@ -261,7 +279,97 @@
         </div>
       </div>
 
+      <!-- ===== MESSAGES PAGE ===== -->
+      <div class="page hidden" id="page-messages">
+        <div class="page-header-bar">
+          <h2 class="page-title">💬 DMs</h2>
+          <p class="page-subtitle">Your conversations</p>
+        </div>
+        <div id="conversationsList"></div>
+        <div class="conversation-view hidden" id="conversationView">
+          <button class="btn-back" id="backToConvos">← Conversations</button>
+          <div class="convo-header card" id="convoHeader"></div>
+          <div class="messages-thread" id="messagesThread"></div>
+          <div class="message-composer card">
+            <input type="text" id="dmInput" class="comment-input" placeholder="Send a message…" maxlength="500" />
+            <button class="btn btn-post" id="dmSendBtn">Send ⚡</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== GAMES PAGE ===== -->
+      <div class="page hidden" id="page-games">
+        <div class="page-header-bar">
+          <h2 class="page-title">🎮 Games</h2>
+          <p class="page-subtitle">Take a break, have fun!</p>
+        </div>
+        <div class="games-grid" id="gamesGrid">
+          <div class="game-card card" data-game="trivia">
+            <div class="game-card-icon">🎭</div>
+            <div class="game-card-title">Victorious Trivia</div>
+            <div class="game-card-desc">How well do you know Hollywood Arts?</div>
+            <button class="btn btn-post game-start-btn" data-game="trivia">Play!</button>
+          </div>
+          <div class="game-card card" data-game="vibe">
+            <div class="game-card-icon">✨</div>
+            <div class="game-card-title">Vibe Check</div>
+            <div class="game-card-desc">Find out what kind of Spark user you are.</div>
+            <button class="btn btn-post game-start-btn" data-game="vibe">Take the Quiz!</button>
+          </div>
+        </div>
+        <div class="game-play-area hidden card" id="gamePlayArea">
+          <button class="btn-back" id="gameBack">← Games</button>
+          <div id="gameContent"></div>
+        </div>
+      </div>
+
+      <!-- ===== ABOUT PAGE ===== -->
+      <div class="page hidden" id="page-about">
+        <div class="about-hero card">
+          <div class="about-logo">The <span>Spark</span> ⚡</div>
+          <p class="about-tagline">Social media for your generation.</p>
+        </div>
+        <div class="about-grid">
+          <div class="about-card card">
+            <div class="about-icon">⚡</div>
+            <h3>What is The Spark?</h3>
+            <p>A social platform where you share how you're feeling, post moments, and connect with people who actually get you.</p>
+          </div>
+          <div class="about-card card">
+            <div class="about-icon">💡</div>
+            <h3>Who's it for?</h3>
+            <p>Anyone who has something to say, something to share, or just wants to vibe with a community that cares.</p>
+          </div>
+          <div class="about-card card">
+            <div class="about-icon">🔒</div>
+            <h3>Your privacy</h3>
+            <p>Set your account to private and only your followers will see your posts. You stay in control.</p>
+          </div>
+          <div class="about-card card">
+            <div class="about-icon">🎮</div>
+            <h3>More than social</h3>
+            <p>Trivia, vibe checks, DMs, hashtags — The Spark is a whole world. There's always something happening.</p>
+          </div>
+        </div>
+        <div class="about-footer card">
+          <p>Made with ⚡ by Paige Dube</p>
+          <button class="btn btn-post" data-page="feed">Start Sparkin'!</button>
+        </div>
+      </div>
+
     </main>
+  </div>
+
+  <!-- SEARCH MODAL -->
+  <div class="modal-overlay hidden" id="searchModal">
+    <div class="search-modal card">
+      <div class="search-header">
+        <span class="search-icon-label">🔍</span>
+        <input type="text" id="searchInput" class="search-input" placeholder="Search people, posts, #tags…" autocomplete="off" />
+        <button class="modal-close" id="searchClose">✕</button>
+      </div>
+      <div id="searchResults" class="search-results"></div>
+    </div>
   </div>
 
   <!-- AUTH MODAL -->
