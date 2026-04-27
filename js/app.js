@@ -1145,12 +1145,18 @@ function renderComment(c) {
   div.className = 'comment'
   const letter = c.profiles?.avatar_letter || '?'
   const url    = c.profiles?.avatar_url
+  const name   = c.profiles?.full_name || c.profiles?.username || 'Unknown'
+  const handle = c.profiles?.username || ''
   div.innerHTML = `
-    <div class="avatar-circle comment-avatar" style="background:${url ? 'none' : colorFromLetter(letter)}">
-      ${url ? `<img src="${url}" alt="${letter}" />` : letter}
+    <div class="avatar-circle comment-avatar" style="background:${url ? 'none' : colorFromLetter(letter)};overflow:hidden">
+      ${url ? `<img src="${url}" alt="${letter}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />` : letter}
     </div>
     <div class="comment-body">
-      <div class="comment-author">${escapeHtml(c.profiles?.full_name || c.profiles?.username || 'Unknown')}</div>
+      <div class="comment-meta">
+        <span class="comment-author">${escapeHtml(name)}</span>
+        <span class="comment-handle">@${escapeHtml(handle)}</span>
+        <span class="comment-time">${timeAgo(c.created_at)}</span>
+      </div>
       <div class="comment-text">${escapeHtml(c.content)}</div>
     </div>
   `
