@@ -70,6 +70,7 @@ async function navigateTo(page) {
   if (page === 'myprofile') await loadMyProfile()
   if (page === 'messages')  await loadMessages()
   if (page === 'games')     loadGames()
+  if (page === 'admin')     await loadAdminPage()
   // 'about' is static HTML — nothing to load
 }
 
@@ -111,6 +112,9 @@ async function setUser(user) {
   setEl('sidebarName',   currentProfile?.full_name || currentProfile?.username || '')
   setEl('sidebarHandle', `@${currentProfile?.username || ''}`)
   document.querySelectorAll('.nav-messages, .mobile-messages').forEach(el => el.classList.remove('hidden'))
+  if (currentProfile?.is_admin) {
+    document.querySelectorAll('.nav-admin, .mobile-admin').forEach(el => el.classList.remove('hidden'))
+  }
   refreshAvatarDisplays()
   document.getElementById('postBtn').disabled = false
   await Promise.all([loadUserStats(), loadSparkedPosts(), loadFollowingIds()])
@@ -123,6 +127,7 @@ function clearUser() {
 
   document.querySelectorAll('.nav-myprofile, .mobile-myprofile').forEach(el => el.classList.add('hidden'))
   document.querySelectorAll('.nav-messages, .mobile-messages').forEach(el => el.classList.add('hidden'))
+  document.querySelectorAll('.nav-admin, .mobile-admin').forEach(el => el.classList.add('hidden'))
 
   const headerUser = document.getElementById('headerUser')
   headerUser.innerHTML = `
@@ -1576,6 +1581,109 @@ function showVibeQ() {
     el.querySelectorAll('.trivia-opt').forEach(b => b.disabled = true)
     setTimeout(() => { vibeState.idx++; showVibeQ() }, 500)
   }))
+}
+
+// ===== ADMIN PAGE =====
+async function loadAdminPage() {
+  if (!currentProfile?.is_admin) { await navigateTo('feed'); return }
+
+  const list = document.getElementById('adminUserList')
+  list.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>'
+
+  const { data: { session } } = await supabase.auth.getSession()
+  const token = session?.access_token
+  if (!token) { list.innerHTML = '<p>Not authenticated.</p>'; return }
+
+  const res  = await fetch(`${SUPABASE_URL}/functions/v1/admin-panel`, {
+    method:  'POST',
+    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ action: 'list-users' }),
+  })
+  const { users, error } = await res.json()
+
+  if (error || !users) {
+    list.innerHTML = `<p style="color:#f87171">Error: ${escapeHtml(error || 'Unknown')}</p>`
+    return
+  }
+
+  list.innerHTML = ''
+  const container = document.createElement('div')
+  container.className = 'admin-user-list'
+
+  users.forEach(u => {
+    const card = document.createElement('div')
+    card.className = 'admin-user-card'
+
+    const letter = u.username?.[0]?.toUpperCase() || '?'
+    card.innerHTML = `
+      <div class="avatar-circle" style="width:44px;height:44px;font-size:1rem;background:${colorFromLetter(letter)};flex-shrink:0">${letter}</div>
+      <div class="admin-user-info">
+        <div class="admin-user-name">
+          ${escapeHtml(u.full_name || u.username)}
+          ${u.is_admin ? '<span class="admin-badge">🛡️ Admin</span>' : ''}
+        </div>
+        <div class="admin-user-meta">
+          <span>@${escapeHtml(u.username)}</span>
+          <span class="admin-user-email">${escapeHtml(u.email || '—')}</span>
+          <span class="admin-joined">Joined ${new Date(u.created_at).toLocaleDateString()}</span>
+        </div>
+      </div>
+      <button class="admin-set-btn" data-uid="${u.id}" data-uname="${escapeHtml(u.username)}">🔑 Set Password</button>
+      <div class="admin-pw-form hidden" id="pwform-${u.id}">
+        <input type="password" class="admin-pw-input" placeholder="New password (min 6 chars)" />
+        <input type="password" class="admin-pw-input" placeholder="Confirm password" />
+        <button class="admin-pw-save">Save</button>
+        <span class="admin-pw-cancel">Cancel</span>
+        <span class="admin-pw-ok hidden">✓ Updated!</span>
+        <span class="admin-pw-err hidden"></span>
+      </div>`
+
+    // Wire Set Password button
+    card.querySelector('.admin-set-btn').addEventListener('click', () => {
+      card.querySelector(`#pwform-${u.id}`).classList.toggle('hidden')
+    })
+
+    // Wire Cancel
+    card.querySelector('.admin-pw-cancel').addEventListener('click', () => {
+      const form = card.querySelector(`#pwform-${u.id}`)
+      form.querySelectorAll('input').forEach(i => i.value = '')
+      form.querySelector('.admin-pw-ok').classList.add('hidden')
+      form.querySelector('.admin-pw-err').classList.add('hidden')
+      form.classList.add('hidden')
+    })
+
+    // Wire Save
+    card.querySelector('.admin-pw-save').addEventListener('click', async () => {
+      const form    = card.querySelector(`#pwform-${u.id}`)
+      const [p1, p2] = [...form.querySelectorAll('.admin-pw-input')].map(i => i.value)
+      const okEl    = form.querySelector('.admin-pw-ok')
+      const errEl   = form.querySelector('.admin-pw-err')
+      okEl.classList.add('hidden'); errEl.classList.add('hidden')
+
+      if (!p1 || p1.length < 6) { errEl.textContent = 'Min 6 characters.'; errEl.classList.remove('hidden'); return }
+      if (p1 !== p2)             { errEl.textContent = 'Passwords don\'t match.'; errEl.classList.remove('hidden'); return }
+
+      const { data: { session: s } } = await supabase.auth.getSession()
+      const r = await fetch(`${SUPABASE_URL}/functions/v1/admin-panel`, {
+        method:  'POST',
+        headers: { 'Authorization': `Bearer ${s.access_token}`, 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ action: 'set-password', userId: u.id, newPassword: p1 }),
+      })
+      const body = await r.json()
+      if (body.ok) {
+        form.querySelectorAll('input').forEach(i => i.value = '')
+        okEl.classList.remove('hidden')
+        setTimeout(() => okEl.classList.add('hidden'), 3000)
+      } else {
+        errEl.textContent = body.error || 'Something went wrong.'
+        errEl.classList.remove('hidden')
+      }
+    })
+
+    container.appendChild(card)
+  })
+
+  list.appendChild(container)
 }
 
 // ===== ZODIAC =====

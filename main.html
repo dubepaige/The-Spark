@@ -39,6 +39,7 @@
         <a href="#" class="nav-link"        data-page="about">About</a>
         <a href="#" class="nav-link nav-messages hidden" data-page="messages">💬 DMs</a>
         <a href="#" class="nav-link nav-myprofile hidden" data-page="myprofile">My Profile</a>
+        <a href="#" class="nav-link nav-admin hidden" data-page="admin">🛡️ Admin</a>
       </nav>
 
       <button class="search-btn" id="searchBtn" title="Search">🔍</button>
@@ -63,6 +64,7 @@
       <a href="#" class="mobile-nav-link" data-page="about">ℹ️ About</a>
       <a href="#" class="mobile-nav-link mobile-messages hidden" data-page="messages">💬 DMs</a>
       <a href="#" class="mobile-nav-link mobile-myprofile hidden" data-page="myprofile">👤 My Profile</a>
+      <a href="#" class="mobile-nav-link mobile-admin hidden" data-page="admin">🛡️ Admin</a>
     </div>
   </header>
 
@@ -376,6 +378,15 @@
           <p>Made with ⚡ by Paige Dube</p>
           <button class="btn btn-post" data-page="feed">Start Sparkin'!</button>
         </div>
+      </div>
+
+      <!-- ===== ADMIN PAGE ===== -->
+      <div class="page hidden" id="page-admin">
+        <div class="page-header-bar">
+          <h2 class="page-title">🛡️ Admin Panel</h2>
+          <p class="page-subtitle">Manage users and passwords</p>
+        </div>
+        <div id="adminUserList"></div>
       </div>
 
     </main>
