@@ -48,8 +48,20 @@ Deno.serve(async (req) => {
   if (action === 'set-password') {
     if (!userId || !newPassword || newPassword.length < 6)
       return json({ error: 'userId and newPassword (min 6 chars) required' }, 400)
-    const { error } = await admin.auth.admin.updateUserById(userId, { password: newPassword })
-    if (error) return json({ error: error.message }, 500)
+
+    // Use the REST API directly — more reliable in Deno than the JS client admin method
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${userId}`, {
+      method:  'PUT',
+      headers: {
+        'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        'apikey':        SUPABASE_SERVICE_ROLE_KEY,
+        'Content-Type':  'application/json',
+      },
+      body: JSON.stringify({ password: newPassword }),
+    })
+
+    const data = await res.json()
+    if (!res.ok) return json({ error: data?.msg || data?.message || 'Auth API error' }, 500)
     return json({ ok: true })
   }
 
