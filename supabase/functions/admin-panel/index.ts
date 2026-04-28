@@ -1,26 +1,34 @@
 // Admin Panel Edge Function
-// SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are auto-injected by Supabase — no secrets to add.
+// SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are auto-injected by Supabase.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const SUPABASE_URL              = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
+const CORS = {
+  'Access-Control-Allow-Origin':  '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+}
+
 const json = (data: unknown, status = 200) =>
-  new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } })
+  new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json', ...CORS } })
 
 Deno.serve(async (req) => {
-  // Pull JWT from Authorization header
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
+
   const token = (req.headers.get('Authorization') ?? '').replace('Bearer ', '')
   if (!token) return json({ error: 'Unauthorized' }, 401)
 
-  // Use service-role client throughout (service role bypasses RLS)
   const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
-  // Verify the caller's JWT and check admin flag
+  // Verify caller JWT
   const { data: { user }, error: authErr } = await admin.auth.getUser(token)
   if (authErr || !user) return json({ error: 'Unauthorized' }, 401)
 
+  // Check admin flag
   const { data: caller } = await admin.from('profiles').select('is_admin').eq('id', user.id).single()
   if (!caller?.is_admin) return json({ error: 'Forbidden — admins only' }, 403)
 
@@ -40,7 +48,6 @@ Deno.serve(async (req) => {
   if (action === 'set-password') {
     if (!userId || !newPassword || newPassword.length < 6)
       return json({ error: 'userId and newPassword (min 6 chars) required' }, 400)
-
     const { error } = await admin.auth.admin.updateUserById(userId, { password: newPassword })
     if (error) return json({ error: error.message }, 500)
     return json({ ok: true })

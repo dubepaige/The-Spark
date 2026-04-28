@@ -1594,13 +1594,20 @@ async function loadAdminPage() {
   const token = session?.access_token
   if (!token) { list.innerHTML = '<p>Not authenticated.</p>'; return }
 
-  const res  = await fetch(`${SUPABASE_URL}/functions/v1/admin-panel`, {
-    method:  'POST',
-    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body:    JSON.stringify({ action: 'list-users' }),
-  })
-  const { users, error } = await res.json()
+  let resJson
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/admin-panel`, {
+      method:  'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ action: 'list-users' }),
+    })
+    resJson = await res.json()
+  } catch (err) {
+    list.innerHTML = `<p style="color:#f87171">Network error — is the edge function deployed?<br><code>${escapeHtml(String(err))}</code></p>`
+    return
+  }
 
+  const { users, error } = resJson
   if (error || !users) {
     list.innerHTML = `<p style="color:#f87171">Error: ${escapeHtml(error || 'Unknown')}</p>`
     return
