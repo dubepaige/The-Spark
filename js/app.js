@@ -1661,29 +1661,42 @@ async function loadAdminPage() {
 
     // Wire Save
     card.querySelector('.admin-pw-save').addEventListener('click', async () => {
-      const form    = card.querySelector(`#pwform-${u.id}`)
-      const [p1, p2] = [...form.querySelectorAll('.admin-pw-input')].map(i => i.value)
-      const okEl    = form.querySelector('.admin-pw-ok')
-      const errEl   = form.querySelector('.admin-pw-err')
+      const form  = card.querySelector(`#pwform-${u.id}`)
+      const inputs = [...form.querySelectorAll('.admin-pw-input')]
+      const p1    = inputs[0]?.value ?? ''
+      const p2    = inputs[1]?.value ?? ''
+      const okEl  = form.querySelector('.admin-pw-ok')
+      const errEl = form.querySelector('.admin-pw-err')
+      const saveBtn = form.querySelector('.admin-pw-save')
+
+      const showErr = msg => { errEl.textContent = msg; errEl.classList.remove('hidden') }
       okEl.classList.add('hidden'); errEl.classList.add('hidden')
 
-      if (!p1 || p1.length < 6) { errEl.textContent = 'Min 6 characters.'; errEl.classList.remove('hidden'); return }
-      if (p1 !== p2)             { errEl.textContent = 'Passwords don\'t match.'; errEl.classList.remove('hidden'); return }
+      if (p1.length < 6)  return showErr('Min 6 characters.')
+      if (p1 !== p2)       return showErr("Passwords don't match.")
 
-      const { data: { session: s } } = await supabase.auth.getSession()
-      const r = await fetch(`${SUPABASE_URL}/functions/v1/admin-panel`, {
-        method:  'POST',
-        headers: { 'Authorization': `Bearer ${s.access_token}`, 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ action: 'set-password', userId: u.id, newPassword: p1 }),
-      })
-      const body = await r.json()
-      if (body.ok) {
-        form.querySelectorAll('input').forEach(i => i.value = '')
-        okEl.classList.remove('hidden')
-        setTimeout(() => okEl.classList.add('hidden'), 3000)
-      } else {
-        errEl.textContent = body.error || 'Something went wrong.'
-        errEl.classList.remove('hidden')
+      saveBtn.textContent = 'Saving…'; saveBtn.disabled = true
+      try {
+        const { data: { session: s } } = await supabase.auth.getSession()
+        if (!s) return showErr('Session expired — please log in again.')
+
+        const r    = await fetch(`${SUPABASE_URL}/functions/v1/admin-panel`, {
+          method:  'POST',
+          headers: { 'Authorization': `Bearer ${s.access_token}`, 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ action: 'set-password', userId: u.id, newPassword: p1 }),
+        })
+        const body = await r.json()
+        if (body.ok) {
+          inputs.forEach(i => i.value = '')
+          okEl.classList.remove('hidden')
+          setTimeout(() => okEl.classList.add('hidden'), 3000)
+        } else {
+          showErr(body.error || 'Something went wrong.')
+        }
+      } catch (err) {
+        showErr(`Error: ${err.message || err}`)
+      } finally {
+        saveBtn.textContent = 'Save'; saveBtn.disabled = false
       }
     })
 
