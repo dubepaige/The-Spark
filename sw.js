@@ -1,20 +1,15 @@
 // ===== The Spark — Service Worker =====
-const CACHE   = 'spark-v4'
-const SHELL   = [
-  '/The-Spark/',
-  '/The-Spark/css/main.css',
-  '/The-Spark/js/app.js',
+const CACHE = 'spark-v5'
+const STATIC = [
   '/The-Spark/manifest.json',
   '/The-Spark/icon-192.png',
   '/The-Spark/icon-512.png',
   '/The-Spark/apple-touch-icon.png',
 ]
 
-// Install: cache the app shell
+// Install: pre-cache only static assets (not JS/CSS — those are network-first)
 self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(SHELL))
-  )
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(STATIC)))
   self.skipWaiting()
 })
 
@@ -28,22 +23,41 @@ self.addEventListener('activate', e => {
   self.clients.claim()
 })
 
-// Fetch: serve shell from cache, everything else from network
+// Fetch strategy:
+//   • Supabase / esm.sh / fonts  → always network (bypass SW entirely)
+//   • JS and CSS                 → network-first  (updates show on normal refresh)
+//   • Everything else            → cache-first    (fast, offline-friendly)
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url)
 
-  // Always hit the network for Supabase API calls
+  // Bypass SW for external APIs and CDNs
   if (url.hostname.includes('supabase.co') ||
       url.hostname.includes('esm.sh')      ||
       url.hostname.includes('fonts.g')) {
-    return // let browser handle it normally
+    return
   }
 
+  const isCodeAsset = url.pathname.endsWith('.js') || url.pathname.endsWith('.css')
+
+  if (isCodeAsset) {
+    // Network-first: always fetch fresh JS/CSS, cache as fallback
+    e.respondWith(
+      fetch(e.request).then(res => {
+        if (res.ok) {
+          const copy = res.clone()
+          caches.open(CACHE).then(c => c.put(e.request, copy))
+        }
+        return res
+      }).catch(() => caches.match(e.request))
+    )
+    return
+  }
+
+  // Cache-first for images, HTML, manifest, etc.
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached
       return fetch(e.request).then(res => {
-        // Cache new local assets on the fly
         if (res.ok && url.hostname === self.location.hostname) {
           const copy = res.clone()
           caches.open(CACHE).then(c => c.put(e.request, copy))
