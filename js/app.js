@@ -1688,8 +1688,9 @@ async function loadAdminPage() {
         const body = await r.json()
         if (body.ok) {
           inputs.forEach(i => i.value = '')
+          okEl.textContent = `✓ Password updated for ${body.email || u.username}!`
           okEl.classList.remove('hidden')
-          setTimeout(() => okEl.classList.add('hidden'), 3000)
+          setTimeout(() => okEl.classList.add('hidden'), 4000)
         } else {
           showErr(body.error || 'Something went wrong.')
         }
