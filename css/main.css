@@ -915,8 +915,27 @@ body {
 .about-icon    { font-size: 2rem; margin-bottom: 10px; }
 .about-card h3 { font-size: 1rem; font-weight: 800; margin-bottom: 8px; color: var(--purple-light); }
 .about-card p  { font-size: 0.86rem; line-height: 1.6; color: var(--text-muted); }
-.about-footer  { text-align: center; padding: 24px; }
-.about-footer p { color: var(--text-muted); margin-bottom: 14px; font-size: 0.9rem; }
+.about-footer  { text-align: center; padding: 28px 24px; display: flex; flex-direction: column; align-items: center; gap: 18px; }
+.about-creator-text {
+  color: var(--text-muted); font-size: 0.92rem; line-height: 1.7;
+  max-width: 580px;
+}
+.about-creator-text strong { color: var(--text); }
+.about-links {
+  display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;
+}
+.about-link {
+  display: flex; align-items: center; gap: 7px;
+  padding: 9px 20px; border-radius: 20px;
+  border: 1.5px solid var(--card-border);
+  color: var(--text-muted); text-decoration: none;
+  font-weight: 700; font-size: 0.88rem; transition: all 0.2s;
+}
+.about-link:hover {
+  border-color: var(--purple); color: var(--purple-light);
+  background: rgba(139,92,246,0.1);
+  transform: translateY(-2px);
+}
 
 /* ===== FLOATING FEEDBACK BUTTON ===== */
 .feedback-fab {
