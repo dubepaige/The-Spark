@@ -1,5 +1,5 @@
 // ===== The Spark — Service Worker =====
-const CACHE = 'spark-v5'
+const CACHE = 'spark-v6'
 const STATIC = [
   '/The-Spark/manifest.json',
   '/The-Spark/icon-192.png',
@@ -37,7 +37,7 @@ self.addEventListener('fetch', e => {
     return
   }
 
-  const isCodeAsset = url.pathname.endsWith('.js') || url.pathname.endsWith('.css')
+  const isCodeAsset = url.pathname.endsWith('.js') || url.pathname.endsWith('.css') || url.pathname.endsWith('.html') || url.pathname.endsWith('/')
 
   if (isCodeAsset) {
     // Network-first: always fetch fresh JS/CSS, cache as fallback
