@@ -687,13 +687,21 @@ body {
 }
 .hashtag:hover { color: var(--neon-green); text-shadow: 0 0 8px rgba(57,255,20,0.4); }
 .hashtag-filter-bar {
-  display: flex; align-items: center; gap: 10px;
-  background: rgba(34,211,238,0.08); border: 1px solid rgba(34,211,238,0.25);
-  border-radius: var(--radius-sm); padding: 8px 14px; margin-bottom: 4px;
+  display: flex; align-items: center; gap: 12px;
+  background: linear-gradient(135deg, rgba(34,211,238,0.1), rgba(139,92,246,0.08));
+  border: 1px solid rgba(34,211,238,0.3);
+  border-radius: var(--radius); padding: 14px 16px; margin-bottom: 8px;
 }
-.hashtag-filter-label { color: var(--cyan); font-weight: 700; font-size: 0.9rem; flex: 1; }
-.hashtag-filter-clear { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1rem; }
-.hashtag-filter-clear:hover { color: var(--neon-pink); }
+.hashtag-filter-icon { font-size: 1.4rem; }
+.hashtag-filter-info { flex: 1; }
+.hashtag-filter-label { color: var(--cyan); font-weight: 900; font-size: 1.1rem; font-family: 'Bangers', cursive; letter-spacing: 1px; display: block; }
+.hashtag-filter-sub   { color: var(--text-muted); font-size: 0.75rem; }
+.hashtag-filter-clear {
+  background: rgba(255,255,255,0.08); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text-muted);
+  cursor: pointer; font-size: 0.78rem; padding: 4px 10px;
+}
+.hashtag-filter-clear:hover { border-color: var(--neon-pink); color: var(--neon-pink); background: rgba(255,20,147,0.08); }
 
 /* ===== PRIVATE BADGE ===== */
 .private-badge {
@@ -972,6 +980,62 @@ body {
 .profile-song-label  { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 1px; }
 .profile-song-title  { font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .profile-song-artist { color: var(--text-muted); font-size: 0.74rem; }
+
+/* ===== BLOCK BUTTON ===== */
+.btn-block {
+  background: transparent; border: 1.5px solid var(--border);
+  color: var(--text-muted); border-radius: var(--radius-sm);
+  padding: 6px 14px; font-size: 0.82rem; cursor: pointer;
+  transition: all 0.18s; margin-top: 4px;
+}
+.btn-block:hover, .btn-block.blocked {
+  background: rgba(248,113,113,0.1); border-color: #f87171; color: #f87171;
+}
+
+/* ===== CLOSE FRIENDS ===== */
+.close-friends-card { margin-bottom: 16px; }
+.close-friends-title { font-weight: 800; font-size: 0.95rem; margin-bottom: 4px; }
+.close-friends-hint { color: var(--text-muted); font-size: 0.78rem; margin-bottom: 12px; }
+.close-friends-add-row { display: flex; gap: 8px; margin-bottom: 12px; }
+.close-friends-input {
+  flex: 1; background: var(--input-bg); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 8px 12px; color: var(--text);
+  font-size: 0.85rem;
+}
+.close-friends-input:focus { outline: none; border-color: var(--accent); }
+.btn-cf-add {
+  background: var(--accent); color: #fff; border: none;
+  border-radius: var(--radius-sm); padding: 8px 14px;
+  font-size: 0.82rem; font-weight: 700; cursor: pointer;
+  white-space: nowrap;
+}
+.btn-cf-add:hover { opacity: 0.85; }
+.cf-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 0; border-bottom: 1px solid var(--border);
+}
+.cf-item:last-child { border-bottom: none; }
+.cf-info { flex: 1; min-width: 0; }
+.cf-name   { font-weight: 700; font-size: 0.86rem; }
+.cf-handle { color: var(--text-muted); font-size: 0.76rem; }
+.btn-cf-remove {
+  background: transparent; border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text-muted);
+  font-size: 0.75rem; padding: 3px 9px; cursor: pointer;
+}
+.btn-cf-remove:hover { border-color: #f87171; color: #f87171; }
+.cf-empty { color: var(--text-muted); font-size: 0.82rem; padding: 4px 0; }
+.cf-err   { color: #f87171; font-size: 0.8rem; margin-top: 4px; }
+
+/* Privacy badge in composer */
+.composer-privacy-btn {
+  font-size: 0.78rem; padding: 4px 10px; border-radius: 999px;
+  border: 1px solid var(--border); background: transparent;
+  color: var(--text-muted); cursor: pointer; transition: all 0.18s;
+  white-space: nowrap;
+}
+.composer-privacy-btn.followers   { border-color: var(--accent); color: var(--accent); background: rgba(139,92,246,0.1); }
+.composer-privacy-btn.close-friends { border-color: #f59e0b; color: #f59e0b; background: rgba(245,158,11,0.1); }
 
 /* ===== FOLLOW REQUESTS ===== */
 .follow-requests-card { margin-bottom: 16px; }

@@ -231,6 +231,7 @@
               </div>
               <button class="btn-follow hidden" id="followBtn">Follow</button>
               <button class="btn-dm     hidden" id="dmBtn">💬 Message</button>
+              <button class="btn-block  hidden" id="blockBtn">🚫 Block</button>
             </div>
           </div>
           <div class="posts-feed" id="profilePostsFeed"></div>
@@ -300,6 +301,17 @@
           </div>
           <button class="btn btn-post" id="saveProfileBtn">Save Changes</button>
           <span class="save-confirm hidden" id="saveConfirm">✓ Saved!</span>
+        </div>
+
+        <!-- Close Friends -->
+        <div class="close-friends-card card" id="closeFriendsCard">
+          <div class="close-friends-title">⭐ Close Friends</div>
+          <p class="close-friends-hint">Posts set to "Close Friends" are only visible to people on this list.</p>
+          <div class="close-friends-add-row">
+            <input type="text" id="cfSearchInput" class="close-friends-input" placeholder="Add by @username…" maxlength="40" />
+            <button class="btn-cf-add" id="cfAddBtn">Add</button>
+          </div>
+          <div id="closeFriendsList"></div>
         </div>
 
         <!-- Follow Requests -->

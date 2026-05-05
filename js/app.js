@@ -17,8 +17,12 @@ let followingIds    = new Set() // profile IDs currentUser follows
 let activeHashtag   = null   // hashtag currently filtering the feed
 let activeConvoId   = null   // profile ID of open DM conversation
 let msgChannel      = null   // Supabase Realtime channel
-let postIsPrivate   = false  // privacy state for the composer
+let postPrivacy     = 'public' // 'public' | 'followers' | 'close_friends'
 let feedTab         = 'explore' // 'explore' | 'following'
+let closeFriendIds  = new Set() // IDs I've added to my close friends
+let addedAsCFByIds  = new Set() // IDs who've added me to their close friends
+let blockedIds      = new Set() // IDs I've blocked
+let blockedByIds    = new Set() // IDs who've blocked me
 
 // ===== INIT =====
 async function init() {
@@ -119,12 +123,14 @@ async function setUser(user) {
   }
   refreshAvatarDisplays()
   document.getElementById('postBtn').disabled = false
-  await Promise.all([loadUserStats(), loadSparkedPosts(), loadFollowingIds()])
+  await Promise.all([loadUserStats(), loadSparkedPosts(), loadFollowingIds(), loadCloseFriendsData(), loadBlockData()])
 }
 
 function clearUser() {
   currentUser = null; currentProfile = null
-  followingIds.clear(); activeHashtag = null; activeConvoId = null
+  followingIds.clear(); closeFriendIds.clear(); addedAsCFByIds.clear()
+  blockedIds.clear(); blockedByIds.clear()
+  activeHashtag = null; activeConvoId = null
   if (msgChannel) { supabase.removeChannel(msgChannel); msgChannel = null }
 
   document.querySelectorAll('.nav-myprofile, .mobile-myprofile').forEach(el => el.classList.add('hidden'))
@@ -198,6 +204,26 @@ async function loadFollowingIds() {
   if (!currentUser) return
   const { data } = await supabase.from('follows').select('following_id').eq('follower_id', currentUser.id)
   followingIds = new Set((data || []).map(f => f.following_id))
+}
+
+async function loadCloseFriendsData() {
+  if (!currentUser) return
+  const [{ data: mine }, { data: addedMe }] = await Promise.all([
+    supabase.from('close_friends').select('friend_id').eq('owner_id', currentUser.id),
+    supabase.from('close_friends').select('owner_id').eq('friend_id', currentUser.id),
+  ])
+  closeFriendIds = new Set((mine || []).map(r => r.friend_id))
+  addedAsCFByIds = new Set((addedMe || []).map(r => r.owner_id))
+}
+
+async function loadBlockData() {
+  if (!currentUser) return
+  const [{ data: iBlocked }, { data: blockedMe }] = await Promise.all([
+    supabase.from('blocks').select('blocked_id').eq('blocker_id', currentUser.id),
+    supabase.from('blocks').select('blocker_id').eq('blocked_id', currentUser.id),
+  ])
+  blockedIds   = new Set((iBlocked  || []).map(r => r.blocked_id))
+  blockedByIds = new Set((blockedMe || []).map(r => r.blocker_id))
 }
 
 // ===== AUTH MODAL =====
@@ -314,11 +340,22 @@ function setupComposer() {
     checkReady()
   })
 
-  // Post privacy toggle
+  // Post privacy toggle — cycle: public → followers → close friends → public
+  const privacyStates = [
+    { key: 'public',        label: '🌍 Public',        cls: '' },
+    { key: 'followers',     label: '👥 Followers only', cls: 'followers' },
+    { key: 'close_friends', label: '⭐ Close Friends',  cls: 'close-friends' },
+  ]
+  function applyPrivacyBtn() {
+    const s = privacyStates.find(s => s.key === postPrivacy) || privacyStates[0]
+    privacyBtn.textContent = s.label
+    privacyBtn.className = `composer-privacy-btn ${s.cls}`.trim()
+  }
+  applyPrivacyBtn()
   privacyBtn.addEventListener('click', () => {
-    postIsPrivate = !postIsPrivate
-    privacyBtn.textContent = postIsPrivate ? '🔒 Followers only' : '🌍 Public'
-    privacyBtn.classList.toggle('privacy-private', postIsPrivate)
+    const idx = privacyStates.findIndex(s => s.key === postPrivacy)
+    postPrivacy = privacyStates[(idx + 1) % privacyStates.length].key
+    applyPrivacyBtn()
   })
 
   input.addEventListener('input', () => {
@@ -391,7 +428,9 @@ async function submitPost() {
   }
 
   const { error } = await supabase.from('posts').insert({
-    user_id: currentUser.id, feeling, content, media_url, media_type, is_private: postIsPrivate
+    user_id: currentUser.id, feeling, content, media_url, media_type,
+    is_private:      postPrivacy === 'followers',
+    is_close_friends: postPrivacy === 'close_friends'
   })
 
   postBtn.textContent = 'Spark it!'
@@ -401,8 +440,9 @@ async function submitPost() {
     document.getElementById('customFeelingRow').classList.add('hidden')
     document.getElementById('customFeelingInput').value = ''
     document.getElementById('postPrivacyBtn').textContent = '🌍 Public'
-    document.getElementById('postPrivacyBtn').classList.remove('privacy-private')
-    postIsPrivate = false
+    postPrivacy = 'public'
+    const pb = document.getElementById('postPrivacyBtn')
+    if (pb) { pb.textContent = '🌍 Public'; pb.className = 'composer-privacy-btn' }
     document.getElementById('composerInput').value = ''
     document.getElementById('mediaPreview').classList.add('hidden')
     document.getElementById('mediaRemove').click()
@@ -453,17 +493,27 @@ async function loadFeed(tag = activeHashtag) {
 
   feed.innerHTML = ''
 
-  // Hashtag filter bar
+  // Hashtag page banner
   if (tag) {
     const bar = document.createElement('div')
     bar.className = 'hashtag-filter-bar'
-    bar.innerHTML = `<span class="hashtag-filter-label">#${escapeHtml(tag)}</span>
-      <button class="hashtag-filter-clear" id="clearHashtag">✕ Clear filter</button>`
-    bar.querySelector('#clearHashtag').addEventListener('click', () => loadFeed(null))
+    bar.innerHTML = `
+      <div class="hashtag-filter-icon">#</div>
+      <div class="hashtag-filter-info">
+        <span class="hashtag-filter-label">#${escapeHtml(tag)}</span>
+        <span class="hashtag-filter-sub">Browsing posts tagged #${escapeHtml(tag)}</span>
+      </div>
+      <button class="hashtag-filter-clear">✕ Back to feed</button>`
+    bar.querySelector('.hashtag-filter-clear').addEventListener('click', () => loadFeed(null))
     feed.appendChild(bar)
   }
 
   let visible = posts || []
+
+  // Filter blocked users
+  visible = visible.filter(post =>
+    !blockedIds.has(post.user_id) && !blockedByIds.has(post.user_id)
+  )
 
   // Filter private accounts
   visible = visible.filter(post => {
@@ -473,7 +523,15 @@ async function loadFeed(tag = activeHashtag) {
     return followingIds.has(post.user_id)
   })
 
-  // Filter private posts
+  // Filter close-friends posts
+  visible = visible.filter(post => {
+    if (!post.is_close_friends)          return true
+    if (!currentUser)                    return false
+    if (post.user_id === currentUser.id) return true
+    return addedAsCFByIds.has(post.user_id)
+  })
+
+  // Filter followers-only posts
   visible = visible.filter(post => {
     if (!post.is_private)                return true
     if (!currentUser)                    return false
@@ -699,6 +757,18 @@ async function openProfileDetail(profile) {
     dmBtn.classList.add('hidden')
   }
 
+  // Block button
+  const blockBtn = document.getElementById('blockBtn')
+  if (currentUser && currentUser.id !== profile.id) {
+    blockBtn.classList.remove('hidden')
+    const isBlocked = blockedIds.has(profile.id)
+    blockBtn.textContent = isBlocked ? '🚫 Blocked' : '🚫 Block'
+    blockBtn.classList.toggle('blocked', isBlocked)
+    blockBtn.onclick = () => toggleBlock(profile.id, blockBtn)
+  } else {
+    blockBtn.classList.add('hidden')
+  }
+
   // Follow button (only for other users)
   const followBtn = document.getElementById('followBtn')
   if (currentUser && currentUser.id !== profile.id) {
@@ -731,8 +801,13 @@ async function openProfileDetail(profile) {
     .eq('user_id', profile.id)
     .order('created_at', { ascending: false })
 
-  // Filter private posts — same rules as the feed
+  // Filter posts — same rules as the feed
   const visible = (posts || []).filter(post => {
+    if (post.is_close_friends) {
+      if (!currentUser) return false
+      if (post.user_id === currentUser.id) return true
+      return addedAsCFByIds.has(post.user_id)
+    }
     if (!post.is_private)                return true
     if (!currentUser)                    return false
     if (post.user_id === currentUser.id) return true
@@ -844,6 +919,9 @@ async function loadMyProfile() {
   // Back from stats
   const backFromStats = document.getElementById('backFromStats')
   if (backFromStats) backFromStats.onclick = () => navigateTo('myprofile')
+
+  // Close friends
+  await loadCloseFriendsList()
 
   // Follow requests
   await loadFollowRequests()
@@ -1075,6 +1153,131 @@ async function denyFollowRequest(requestId, itemEl) {
   }
 }
 
+// ===== BLOCK =====
+async function toggleBlock(profileId, btn) {
+  if (!currentUser) return
+  const isBlocked = blockedIds.has(profileId)
+  if (isBlocked) {
+    await supabase.from('blocks').delete().eq('blocker_id', currentUser.id).eq('blocked_id', profileId)
+    blockedIds.delete(profileId)
+    btn.textContent = '🚫 Block'
+    btn.classList.remove('blocked')
+  } else {
+    // Remove any follows in both directions
+    await Promise.all([
+      supabase.from('follows').delete().eq('follower_id', currentUser.id).eq('following_id', profileId),
+      supabase.from('follows').delete().eq('follower_id', profileId).eq('following_id', currentUser.id),
+      supabase.from('follow_requests').delete().eq('requester_id', currentUser.id).eq('target_id', profileId),
+      supabase.from('blocks').insert({ blocker_id: currentUser.id, blocked_id: profileId }),
+    ])
+    blockedIds.add(profileId)
+    followingIds.delete(profileId)
+    btn.textContent = '🚫 Blocked'
+    btn.classList.add('blocked')
+    // Hide the follow button since they're blocked
+    document.getElementById('followBtn')?.classList.add('hidden')
+  }
+}
+
+// ===== CLOSE FRIENDS =====
+async function loadCloseFriendsList() {
+  if (!currentUser) return
+  const container = document.getElementById('closeFriendsList')
+  const errEl     = document.getElementById('cfAddBtn')?.parentElement
+  if (!container) return
+
+  const { data } = await supabase
+    .from('close_friends')
+    .select('profiles!close_friends_friend_id_fkey(id, username, full_name, avatar_letter, avatar_url)')
+    .eq('owner_id', currentUser.id)
+
+  container.innerHTML = ''
+  const friends = (data || []).map(r => r.profiles).filter(Boolean)
+
+  if (!friends.length) {
+    container.innerHTML = `<p class="cf-empty">No close friends added yet.</p>`
+  } else {
+    friends.forEach(p => {
+      const letter = p.avatar_letter || '?'
+      const div = document.createElement('div')
+      div.className = 'cf-item'
+      div.innerHTML = `
+        <div class="avatar-circle" style="width:34px;height:34px;font-size:0.9rem;flex-shrink:0;background:${p.avatar_url ? 'none' : colorFromLetter(letter)};overflow:hidden">
+          ${p.avatar_url ? `<img src="${p.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />` : letter}
+        </div>
+        <div class="cf-info">
+          <div class="cf-name">${escapeHtml(p.full_name || p.username)}</div>
+          <div class="cf-handle">@${escapeHtml(p.username)}</div>
+        </div>
+        <button class="btn-cf-remove">Remove</button>`
+      div.querySelector('.btn-cf-remove').addEventListener('click', () => removeCloseFriend(p.id, div))
+      container.appendChild(div)
+    })
+  }
+
+  // Wire add button
+  const addBtn   = document.getElementById('cfAddBtn')
+  const addInput = document.getElementById('cfSearchInput')
+  if (addBtn && addInput) {
+    addBtn.onclick = () => addCloseFriend(addInput, container)
+    addInput.onkeydown = e => { if (e.key === 'Enter') addCloseFriend(addInput, container) }
+  }
+}
+
+async function addCloseFriend(inputEl, container) {
+  const username = inputEl.value.trim().replace(/^@/, '')
+  if (!username) return
+
+  // Find the profile
+  const { data: profile } = await supabase
+    .from('profiles').select('id, username, full_name, avatar_letter, avatar_url')
+    .eq('username', username).maybeSingle()
+
+  let errEl = document.getElementById('cfErr')
+  if (!errEl) {
+    errEl = document.createElement('p')
+    errEl.id = 'cfErr'; errEl.className = 'cf-err'
+    inputEl.parentElement.insertAdjacentElement('afterend', errEl)
+  }
+
+  if (!profile) { errEl.textContent = `@${username} not found.`; return }
+  if (profile.id === currentUser.id) { errEl.textContent = `You can't add yourself.`; return }
+  if (closeFriendIds.has(profile.id)) { errEl.textContent = `@${username} is already on your list.`; return }
+
+  await supabase.from('close_friends').insert({ owner_id: currentUser.id, friend_id: profile.id })
+  closeFriendIds.add(profile.id)
+  errEl.textContent = ''
+  inputEl.value = ''
+
+  // Remove empty state
+  container.querySelector('.cf-empty')?.remove()
+
+  const letter = profile.avatar_letter || '?'
+  const div = document.createElement('div')
+  div.className = 'cf-item'
+  div.innerHTML = `
+    <div class="avatar-circle" style="width:34px;height:34px;font-size:0.9rem;flex-shrink:0;background:${profile.avatar_url ? 'none' : colorFromLetter(letter)};overflow:hidden">
+      ${profile.avatar_url ? `<img src="${profile.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />` : letter}
+    </div>
+    <div class="cf-info">
+      <div class="cf-name">${escapeHtml(profile.full_name || profile.username)}</div>
+      <div class="cf-handle">@${escapeHtml(profile.username)}</div>
+    </div>
+    <button class="btn-cf-remove">Remove</button>`
+  div.querySelector('.btn-cf-remove').addEventListener('click', () => removeCloseFriend(profile.id, div))
+  container.appendChild(div)
+}
+
+async function removeCloseFriend(friendId, itemEl) {
+  await supabase.from('close_friends').delete().eq('owner_id', currentUser.id).eq('friend_id', friendId)
+  closeFriendIds.delete(friendId)
+  itemEl.remove()
+  const container = document.getElementById('closeFriendsList')
+  if (!container?.children.length) {
+    container.innerHTML = `<p class="cf-empty">No close friends added yet.</p>`
+  }
+}
+
 // ===== MY STATS =====
 async function loadMyStats() {
   if (!currentUser) { navigateTo('myprofile'); return }
@@ -1090,16 +1293,37 @@ async function loadMyStats() {
     .order('created_at', { ascending: true })
 
   // Fetch sparks received (slaps on my posts)
-  const { count: sparksReceived } = await supabase
-    .from('slaps')
-    .select('id', { count: 'exact', head: true })
-    .in('post_id', (posts || []).map(p => p.id))
+  const postIds = (posts || []).map(p => p.id)
+  const { count: sparksReceived } = postIds.length
+    ? await supabase.from('slaps').select('id', { count: 'exact', head: true }).in('post_id', postIds)
+    : { count: 0 }
 
-  // Fetch follower/following counts
-  const [{ count: followerCount }, { count: followingCount }] = await Promise.all([
-    supabase.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', currentUser.id),
-    supabase.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', currentUser.id),
-  ])
+  // Fetch follower history (for growth stats)
+  const { data: followerRows } = await supabase
+    .from('follows')
+    .select('created_at')
+    .eq('following_id', currentUser.id)
+    .order('created_at', { ascending: true })
+
+  const { count: followingCount } = await supabase
+    .from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', currentUser.id)
+
+  const followerCount = (followerRows || []).length
+  const now = new Date()
+  const weekAgo  = new Date(now - 7  * 86400000)
+  const monthAgo = new Date(now - 30 * 86400000)
+  const gainedThisWeek  = (followerRows || []).filter(r => new Date(r.created_at) >= weekAgo).length
+  const gainedThisMonth = (followerRows || []).filter(r => new Date(r.created_at) >= monthAgo).length
+
+  // Followers by week — last 8 weeks
+  const weeklyGains = Array.from({ length: 8 }, (_, i) => {
+    const start = new Date(now - (7 - i) * 7 * 86400000)
+    const end   = new Date(now - (6 - i) * 7 * 86400000)
+    return (followerRows || []).filter(r => {
+      const d = new Date(r.created_at)
+      return d >= start && d < end
+    }).length
+  })
 
   const allPosts = posts || []
   const totalPosts = allPosts.length
@@ -1217,6 +1441,43 @@ async function loadMyStats() {
         ${topTags.map(([tag, count]) => `<div class="stats-hashtag-chip">${escapeHtml(tag)}<span> ×${count}</span></div>`).join('')}
       </div>
     </div>` : ''}
+
+    <div class="card stats-section">
+      <div class="stats-section-title">👥 Follower Growth</div>
+      <div class="stats-length-row" style="margin-bottom:16px">
+        <div class="stats-length-card">
+          <div class="stats-length-num">${gainedThisWeek}</div>
+          <div class="stats-length-label">Gained this week</div>
+        </div>
+        <div class="stats-length-card">
+          <div class="stats-length-num">${gainedThisMonth}</div>
+          <div class="stats-length-label">Gained this month</div>
+        </div>
+        <div class="stats-length-card">
+          <div class="stats-length-num">${followerCount}</div>
+          <div class="stats-length-label">Total followers</div>
+        </div>
+      </div>
+      ${(() => {
+        const maxW = Math.max(...weeklyGains, 1)
+        const weekLabels = Array.from({ length: 8 }, (_, i) => {
+          const d = new Date(now - (7 - i) * 7 * 86400000)
+          return `${d.getMonth()+1}/${d.getDate()}`
+        })
+        return `
+        <div class="stats-section-title" style="font-size:0.78rem;color:var(--text-muted);margin-bottom:10px">New followers by week</div>
+        <div class="stats-day-bars" style="grid-template-columns:repeat(8,1fr)">
+          ${weeklyGains.map((count, i) => `
+            <div class="stats-day-col">
+              <div class="stats-day-count">${count > 0 ? count : ''}</div>
+              <div class="stats-day-bar-wrap">
+                <div class="stats-day-bar" style="height:${maxW > 0 ? Math.max(count > 0 ? 8 : 0, Math.round(count/maxW*100)) : 0}%"></div>
+              </div>
+              <div class="stats-day-label" style="font-size:0.55rem">${weekLabels[i]}</div>
+            </div>`).join('')}
+        </div>`
+      })()}
+    </div>
   `
 }
 
@@ -1377,10 +1638,18 @@ function renderPost(post, showDelete = false) {
     privBtn.addEventListener('click', () => togglePostPrivacy(post.id, privBtn, article))
   }
 
-  // Private post badge (visible to everyone who can see the post)
-  if (post.is_private) {
-    const badge = el.querySelector('.post-private-badge')
-    if (badge) badge.classList.remove('hidden')
+  // Privacy badge
+  const badge = el.querySelector('.post-private-badge')
+  if (badge) {
+    if (post.is_close_friends) {
+      badge.classList.remove('hidden')
+      badge.textContent = '⭐ Close Friends'
+      badge.style.background = 'rgba(245,158,11,0.15)'
+      badge.style.color = '#f59e0b'
+      badge.style.borderColor = 'rgba(245,158,11,0.3)'
+    } else if (post.is_private) {
+      badge.classList.remove('hidden')
+    }
   }
 
   // Spark (like)
