@@ -1839,8 +1839,10 @@ async function searchTunes(query) {
           <div class="tune-title">${escapeHtml(track.trackName)}</div>
           <div class="tune-artist">${escapeHtml(track.artistName)}</div>
         </div>
-        ${track.previewUrl ? `<button class="tune-preview-btn" title="Preview">▶</button>` : ''}
-        ${currentUser ? `<button class="tune-set-btn">Set ⚡</button>` : ''}`
+        <div class="tune-actions">
+          ${track.previewUrl ? `<button class="tune-preview-btn" title="Preview">▶</button>` : ''}
+          ${currentUser ? `<button class="tune-set-btn">Set ⚡</button>` : ''}
+        </div>`
 
       if (track.previewUrl) {
         div.querySelector('.tune-preview-btn').addEventListener('click', e => {
@@ -1906,7 +1908,7 @@ async function loadCommunityTunes() {
         <div class="tune-artist">${escapeHtml(p.song_artist || '')}</div>
       </div>
       <div class="tune-community-user">
-        <div class="avatar-circle" style="background:${p.avatar_url ? 'none' : colorFromLetter(letter)};overflow:hidden">
+        <div class="avatar-circle" style="width:22px;height:22px;font-size:0.6rem;flex-shrink:0;background:${p.avatar_url ? 'none' : colorFromLetter(letter)};overflow:hidden">
           ${p.avatar_url ? `<img src="${p.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />` : letter}
         </div>
         @${escapeHtml(p.username)}
