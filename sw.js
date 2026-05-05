@@ -1,5 +1,5 @@
 // ===== The Spark — Service Worker =====
-const CACHE = 'spark-v6'
+const CACHE = 'spark-v7'
 const STATIC = [
   '/The-Spark/manifest.json',
   '/The-Spark/icon-192.png',
@@ -30,10 +30,13 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url)
 
-  // Bypass SW for external APIs and CDNs
-  if (url.hostname.includes('supabase.co') ||
-      url.hostname.includes('esm.sh')      ||
-      url.hostname.includes('fonts.g')) {
+  // Bypass SW for external APIs and CDNs — let the browser handle these natively
+  if (url.hostname.includes('supabase.co')    ||
+      url.hostname.includes('esm.sh')         ||
+      url.hostname.includes('fonts.g')        ||
+      url.hostname.includes('itunes.apple')   ||
+      url.hostname.includes('mzstatic.com')   ||  // iTunes artwork CDN
+      url.hostname.includes('resend.com')) {
     return
   }
 
