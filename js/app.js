@@ -1142,6 +1142,8 @@ async function loadMyStats() {
   }
 
   // ── Render ──
+  const peakDay = Math.max(...dayCounts)
+
   container.innerHTML = `
     <div class="stats-overview">
       <div class="stat-overview-card">
@@ -1174,8 +1176,24 @@ async function loadMyStats() {
     </div>` : ''}
 
     <div class="card stats-section">
+      <div class="stats-section-title">📅 Posts by Day of Week</div>
+      <div class="stats-day-chart">
+        <div class="stats-day-bars">
+          ${dayCounts.map((count, i) => `
+            <div class="stats-day-col">
+              <div class="stats-day-count">${count > 0 ? count : ''}</div>
+              <div class="stats-day-bar-wrap">
+                <div class="stats-day-bar" style="height:${peakDay > 0 ? Math.max(8, Math.round(count / peakDay * 100)) : 0}%"></div>
+              </div>
+              <div class="stats-day-label${count === peakDay && peakDay > 0 ? ' peak' : ''}">${dayLabels[i]}</div>
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    ${totalPosts > 0 ? `
+    <div class="card stats-section">
       <div class="stats-section-title">📏 Post Length</div>
-      ${totalPosts === 0 ? `<p class="stats-empty">No posts yet!</p>` : `
       <div class="stats-length-row">
         <div class="stats-length-card">
           <div class="stats-length-num">${avgWords}</div>
@@ -1183,32 +1201,20 @@ async function loadMyStats() {
         </div>
         <div class="stats-length-card">
           <div class="stats-length-num">${maxWords}</div>
-          <div class="stats-length-label">Longest post</div>
+          <div class="stats-length-label">Longest</div>
         </div>
         <div class="stats-length-card">
           <div class="stats-length-num">${minWords || 0}</div>
-          <div class="stats-length-label">Shortest post</div>
+          <div class="stats-length-label">Shortest</div>
         </div>
-      </div>`}
-    </div>
-
-    <div class="card stats-section">
-      <div class="stats-section-title">📅 Posts by Day of Week</div>
-      ${totalPosts === 0 ? `<p class="stats-empty">No posts yet!</p>` : `
-      <div class="stats-day-grid">
-        ${dayCounts.map((count, i) => `
-          <div class="stats-day-col">
-            <div class="stats-day-bar" style="height:${Math.round(count / maxDay * 64) + 4}px" title="${count} post${count !== 1 ? 's' : ''}"></div>
-            <div class="stats-day-label">${dayLabels[i]}</div>
-          </div>`).join('')}
-      </div>`}
-    </div>
+      </div>
+    </div>` : ''}
 
     ${topTags.length ? `
     <div class="card stats-section">
       <div class="stats-section-title">🏷️ Your Top Hashtags</div>
       <div class="stats-hashtag-list">
-        ${topTags.map(([tag, count]) => `<div class="stats-hashtag-chip">${escapeHtml(tag)} <span>×${count}</span></div>`).join('')}
+        ${topTags.map(([tag, count]) => `<div class="stats-hashtag-chip">${escapeHtml(tag)}<span> ×${count}</span></div>`).join('')}
       </div>
     </div>` : ''}
   `
