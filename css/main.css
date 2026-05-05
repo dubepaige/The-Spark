@@ -896,6 +896,83 @@ body {
 .vibe-label  { font-family: 'Bangers', cursive; font-size: 2rem; color: var(--neon-pink); letter-spacing: 0.5px; filter: drop-shadow(0 0 8px rgba(255,16,240,0.4)); }
 .vibe-desc   { font-size: 0.95rem; line-height: 1.6; color: var(--text); max-width: 420px; }
 
+/* ===== TUNES PAGE ===== */
+.tunes-my-song    { padding: 16px 18px; }
+.tunes-my-label   { font-size: 0.78rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+.tunes-search-wrap { padding: 16px 18px; }
+.tunes-search-row  { display: flex; gap: 10px; margin-bottom: 14px; }
+.tunes-search-input {
+  flex: 1; background: rgba(255,255,255,0.06); border: 1.5px solid var(--card-border);
+  border-radius: var(--radius-sm); color: var(--text);
+  font-family: 'Nunito', sans-serif; font-size: 0.95rem; font-weight: 600;
+  padding: 10px 14px; outline: none; transition: border-color 0.2s;
+}
+.tunes-search-input:focus { border-color: var(--purple); }
+.tunes-search-input::placeholder { color: var(--text-muted); }
+.tunes-results { display: flex; flex-direction: column; gap: 8px; }
+
+.tune-result, .tune-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px; border-radius: var(--radius-sm);
+  border: 1.5px solid var(--card-border); background: rgba(255,255,255,0.03);
+  transition: border-color 0.2s, background 0.2s;
+}
+.tune-result:hover { border-color: var(--purple); background: rgba(139,92,246,0.07); cursor: pointer; }
+.tune-artwork {
+  width: 48px; height: 48px; border-radius: 8px; object-fit: cover; flex-shrink: 0;
+  background: var(--card-border);
+}
+.tune-info    { flex: 1; min-width: 0; }
+.tune-title   { font-weight: 800; font-size: 0.92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tune-artist  { font-size: 0.78rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tune-set-btn {
+  background: linear-gradient(135deg, var(--purple-dark), var(--purple));
+  color: white; border: none; border-radius: 20px; padding: 7px 14px;
+  font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 0.8rem;
+  cursor: pointer; white-space: nowrap; transition: all 0.2s; flex-shrink: 0;
+}
+.tune-set-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+.tune-preview-btn {
+  background: none; border: 1.5px solid var(--card-border); border-radius: 50%;
+  width: 32px; height: 32px; font-size: 0.9rem; cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; transition: border-color 0.2s;
+  color: var(--text-muted);
+}
+.tune-preview-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+.tune-none { color: var(--text-muted); font-size: 0.88rem; font-style: italic; }
+
+/* Current song display */
+.tunes-current { display: flex; align-items: center; gap: 12px; }
+.tunes-current .tune-artwork { width: 56px; height: 56px; }
+.tunes-current .tune-title { font-size: 1rem; }
+.tune-remove-btn {
+  background: none; border: 1px solid var(--card-border); border-radius: 20px;
+  color: var(--text-muted); font-size: 0.78rem; font-weight: 700; padding: 4px 10px;
+  cursor: pointer; margin-left: auto; flex-shrink: 0; transition: all 0.2s;
+  font-family: 'Nunito', sans-serif;
+}
+.tune-remove-btn:hover { border-color: #f87171; color: #f87171; }
+
+/* Community list */
+.tunes-community { padding: 16px 18px; }
+.tunes-section-title { font-weight: 800; font-size: 0.9rem; color: var(--purple-light); margin-bottom: 12px; }
+.tunes-community-list { display: flex; flex-direction: column; gap: 8px; }
+.tune-community-user { font-size: 0.78rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.tune-community-user .avatar-circle { width: 26px; height: 26px; font-size: 0.65rem; flex-shrink: 0; }
+
+/* Song on profile */
+.profile-song {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 8px; padding: 8px 10px;
+  background: rgba(139,92,246,0.08); border: 1px solid rgba(139,92,246,0.2);
+  border-radius: var(--radius-sm); font-size: 0.8rem;
+}
+.profile-song-art { width: 32px; height: 32px; border-radius: 6px; object-fit: cover; flex-shrink: 0; }
+.profile-song-info { min-width: 0; flex: 1; }
+.profile-song-label  { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 1px; }
+.profile-song-title  { font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.profile-song-artist { color: var(--text-muted); font-size: 0.74rem; }
+
 /* ===== ABOUT PAGE ===== */
 .about-hero {
   text-align: center; padding: 40px 20px;

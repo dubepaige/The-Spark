@@ -69,6 +69,7 @@ async function navigateTo(page) {
   if (page === 'profiles')  await loadProfiles()
   if (page === 'myprofile') await loadMyProfile()
   if (page === 'messages')  await loadMessages()
+  if (page === 'tunes')     await loadTunes()
   if (page === 'games')     loadGames()
   if (page === 'admin')     await loadAdminPage()
   // 'about' is static HTML — nothing to load
@@ -650,6 +651,31 @@ async function openProfileDetail(profile) {
     detailMetaEl.classList.toggle('hidden', parts.length === 0)
   }
 
+  // Song of the moment
+  const detailSongEl = document.getElementById('detailSong')
+  if (detailSongEl) {
+    if (profile.song_title) {
+      detailSongEl.classList.remove('hidden')
+      detailSongEl.innerHTML = `
+        ${profile.song_artwork_url ? `<img class="profile-song-art" src="${escapeHtml(profile.song_artwork_url)}" alt="artwork" />` : ''}
+        <div class="profile-song-info">
+          <div class="profile-song-label">🎵 Song of the moment</div>
+          <div class="profile-song-title">${escapeHtml(profile.song_title)}</div>
+          <div class="profile-song-artist">${escapeHtml(profile.song_artist || '')}</div>
+        </div>
+        ${profile.song_preview_url ? `<button class="tune-preview-btn" title="Preview">▶</button>` : ''}`
+      if (profile.song_preview_url) {
+        detailSongEl.querySelector('.tune-preview-btn').addEventListener('click', e => {
+          e.stopPropagation()
+          togglePreview(profile.song_preview_url, e.currentTarget)
+        })
+      }
+    } else {
+      detailSongEl.classList.add('hidden')
+      detailSongEl.innerHTML = ''
+    }
+  }
+
   // Follower count
   const { count: followerCount } = await supabase
     .from('follows').select('*', { count: 'exact', head: true }).eq('following_id', profile.id)
@@ -765,6 +791,31 @@ async function loadMyProfile() {
     if (currentProfile?.industry) parts.push(`💼 ${currentProfile.industry}`)
     metaEl.textContent   = parts.join('  ·  ')
     metaEl.style.display = parts.length ? '' : 'none'
+  }
+
+  // Song of the moment
+  const mySongEl = document.getElementById('myProfileSong')
+  if (mySongEl) {
+    if (currentProfile?.song_title) {
+      mySongEl.classList.remove('hidden')
+      mySongEl.innerHTML = `
+        ${currentProfile.song_artwork_url ? `<img class="profile-song-art" src="${escapeHtml(currentProfile.song_artwork_url)}" alt="artwork" />` : ''}
+        <div class="profile-song-info">
+          <div class="profile-song-label">🎵 Song of the moment</div>
+          <div class="profile-song-title">${escapeHtml(currentProfile.song_title)}</div>
+          <div class="profile-song-artist">${escapeHtml(currentProfile.song_artist || '')}</div>
+        </div>
+        ${currentProfile.song_preview_url ? `<button class="tune-preview-btn" title="Preview">▶</button>` : ''}`
+      if (currentProfile.song_preview_url) {
+        mySongEl.querySelector('.tune-preview-btn').addEventListener('click', e => {
+          e.stopPropagation()
+          togglePreview(currentProfile.song_preview_url, e.currentTarget)
+        })
+      }
+    } else {
+      mySongEl.classList.add('hidden')
+      mySongEl.innerHTML = ''
+    }
   }
 
   // Private account toggle
@@ -1203,6 +1254,177 @@ async function loadWhoList() {
     li.addEventListener('click', async () => { await navigateTo('profiles'); await openProfileDetail(p) })
     list.appendChild(li)
   })
+}
+
+// ===== TUNES PAGE =====
+let tuneAudio = null // currently playing preview
+
+async function loadTunes() {
+  // Show/hide "your song" section
+  const mySection = document.getElementById('tunesMySection')
+  if (currentUser) {
+    mySection.classList.remove('hidden')
+    renderCurrentSong()
+  } else {
+    mySection.classList.add('hidden')
+  }
+
+  // Wire search
+  const input   = document.getElementById('tunesSearchInput')
+  const btn     = document.getElementById('tunesSearchBtn')
+  const doSearch = () => { if (input.value.trim()) searchTunes(input.value.trim()) }
+  // Clone to remove old listeners
+  const newBtn = btn.cloneNode(true); btn.parentNode.replaceChild(newBtn, btn)
+  newBtn.addEventListener('click', doSearch)
+  input.onkeydown = e => { if (e.key === 'Enter') doSearch() }
+
+  // Load community list
+  await loadCommunityTunes()
+}
+
+function renderCurrentSong() {
+  const el = document.getElementById('tunesCurrentSong')
+  const p  = currentProfile
+  if (!p?.song_title) {
+    el.innerHTML = `<span class="tune-none">No song set yet — search below to pick one!</span>`
+    return
+  }
+  el.innerHTML = `
+    ${p.song_artwork_url ? `<img class="tune-artwork" src="${escapeHtml(p.song_artwork_url)}" alt="artwork" />` : ''}
+    <div class="tune-info">
+      <div class="tune-title">${escapeHtml(p.song_title)}</div>
+      <div class="tune-artist">${escapeHtml(p.song_artist || '')}</div>
+    </div>
+    ${p.song_preview_url ? `<button class="tune-preview-btn" id="tunePreviewCurrent" title="Preview">▶</button>` : ''}
+    <button class="tune-remove-btn" id="tuneRemoveBtn">Remove</button>`
+
+  el.querySelector('#tuneRemoveBtn')?.addEventListener('click', () => setSong(null))
+  el.querySelector('#tunePreviewCurrent')?.addEventListener('click', () => togglePreview(p.song_preview_url, el.querySelector('#tunePreviewCurrent')))
+}
+
+async function searchTunes(query) {
+  const results = document.getElementById('tunesResults')
+  results.innerHTML = '<div class="loading-spinner" style="padding:16px"><div class="spinner"></div></div>'
+
+  try {
+    const res  = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&limit=10`)
+    const data = await res.json()
+    results.innerHTML = ''
+
+    if (!data.results?.length) {
+      results.innerHTML = `<p class="tune-none" style="padding:8px">No results found.</p>`
+      return
+    }
+
+    data.results.forEach(track => {
+      const div = document.createElement('div')
+      div.className = 'tune-result'
+      div.innerHTML = `
+        <img class="tune-artwork" src="${escapeHtml(track.artworkUrl60 || '')}" alt="artwork" />
+        <div class="tune-info">
+          <div class="tune-title">${escapeHtml(track.trackName)}</div>
+          <div class="tune-artist">${escapeHtml(track.artistName)}</div>
+        </div>
+        ${track.previewUrl ? `<button class="tune-preview-btn" title="Preview">▶</button>` : ''}
+        ${currentUser ? `<button class="tune-set-btn">Set ⚡</button>` : ''}`
+
+      if (track.previewUrl) {
+        div.querySelector('.tune-preview-btn').addEventListener('click', e => {
+          e.stopPropagation()
+          togglePreview(track.previewUrl, e.currentTarget)
+        })
+      }
+      if (currentUser) {
+        div.querySelector('.tune-set-btn').addEventListener('click', async e => {
+          e.stopPropagation()
+          await setSong(track)
+          results.innerHTML = ''
+          document.getElementById('tunesSearchInput').value = ''
+          await loadCommunityTunes()
+        })
+      }
+      results.appendChild(div)
+    })
+  } catch {
+    results.innerHTML = `<p class="tune-none" style="padding:8px">Search failed — check your connection.</p>`
+  }
+}
+
+async function setSong(track) {
+  if (!currentUser) return
+  const update = track ? {
+    song_title:       track.trackName,
+    song_artist:      track.artistName,
+    song_artwork_url: track.artworkUrl100 || track.artworkUrl60 || null,
+    song_preview_url: track.previewUrl || null,
+  } : { song_title: null, song_artist: null, song_artwork_url: null, song_preview_url: null }
+
+  await supabase.from('profiles').update(update).eq('id', currentUser.id)
+  Object.assign(currentProfile, update)
+  renderCurrentSong()
+}
+
+async function loadCommunityTunes() {
+  const list = document.getElementById('tunesCommunityList')
+  list.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>'
+
+  const { data } = await supabase
+    .from('profiles')
+    .select('id, username, full_name, avatar_letter, avatar_url, song_title, song_artist, song_artwork_url, song_preview_url')
+    .not('song_title', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(30)
+
+  list.innerHTML = ''
+  if (!data?.length) {
+    list.innerHTML = `<p class="tune-none">No one has set a song yet — be the first!</p>`
+    return
+  }
+
+  data.forEach(p => {
+    const letter = p.avatar_letter || '?'
+    const div = document.createElement('div')
+    div.className = 'tune-item'
+    div.innerHTML = `
+      <img class="tune-artwork" src="${escapeHtml(p.song_artwork_url || '')}" alt="artwork" />
+      <div class="tune-info">
+        <div class="tune-title">${escapeHtml(p.song_title)}</div>
+        <div class="tune-artist">${escapeHtml(p.song_artist || '')}</div>
+      </div>
+      <div class="tune-community-user">
+        <div class="avatar-circle" style="background:${p.avatar_url ? 'none' : colorFromLetter(letter)};overflow:hidden">
+          ${p.avatar_url ? `<img src="${p.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />` : letter}
+        </div>
+        @${escapeHtml(p.username)}
+      </div>
+      ${p.song_preview_url ? `<button class="tune-preview-btn" title="Preview">▶</button>` : ''}`
+
+    if (p.song_preview_url) {
+      div.querySelector('.tune-preview-btn').addEventListener('click', e => {
+        e.stopPropagation()
+        togglePreview(p.song_preview_url, e.currentTarget)
+      })
+    }
+    div.addEventListener('click', async () => {
+      await navigateTo('profiles')
+      await openProfileDetail(p)
+    })
+    list.appendChild(div)
+  })
+}
+
+function togglePreview(url, btn) {
+  if (tuneAudio && !tuneAudio.paused) {
+    tuneAudio.pause()
+    document.querySelectorAll('.tune-preview-btn').forEach(b => b.textContent = '▶')
+    if (tuneAudio.src.includes(encodeURIComponent(url)) || tuneAudio.src === url) {
+      tuneAudio = null; return
+    }
+  }
+  tuneAudio = new Audio(url)
+  tuneAudio.play()
+  btn.textContent = '⏸'
+  tuneAudio.onended = () => { btn.textContent = '▶'; tuneAudio = null }
 }
 
 // ===== TOP HASHTAGS SIDEBAR =====

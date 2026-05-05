@@ -35,6 +35,7 @@
         <a href="#" class="nav-link active" data-page="feed">Feed</a>
         <a href="#" class="nav-link"        data-page="videos">Videos</a>
         <a href="#" class="nav-link"        data-page="profiles">Profiles</a>
+        <a href="#" class="nav-link"        data-page="tunes">🎵 Tunes</a>
         <a href="#" class="nav-link"        data-page="games">🎮 Games</a>
         <a href="#" class="nav-link"        data-page="about">About</a>
         <a href="#" class="nav-link nav-messages hidden" data-page="messages">💬 DMs</a>
@@ -60,6 +61,7 @@
       <a href="#" class="mobile-nav-link" data-page="feed">⚡ Feed</a>
       <a href="#" class="mobile-nav-link" data-page="videos">🎬 Videos</a>
       <a href="#" class="mobile-nav-link" data-page="profiles">✨ Profiles</a>
+      <a href="#" class="mobile-nav-link" data-page="tunes">🎵 Tunes</a>
       <a href="#" class="mobile-nav-link" data-page="games">🎮 Games</a>
       <a href="#" class="mobile-nav-link" data-page="about">ℹ️ About</a>
       <a href="#" class="mobile-nav-link mobile-messages hidden" data-page="messages">💬 DMs</a>
@@ -222,6 +224,7 @@
               <div class="profile-detail-name"   id="detailName"></div>
               <div class="profile-detail-handle" id="detailHandle"></div>
               <div class="profile-detail-meta hidden" id="detailMeta"></div>
+              <div class="profile-song hidden" id="detailSong"></div>
               <div class="profile-detail-stats">
                 <span id="detailPostCount">0</span> posts ·
                 <span id="detailFollowerCount">0</span> followers
@@ -248,6 +251,7 @@
             <div class="my-profile-name"   id="myProfileName"></div>
             <div class="my-profile-handle" id="myProfileHandle"></div>
             <div class="my-profile-meta"   id="myProfileMeta"></div>
+            <div class="profile-song hidden" id="myProfileSong"></div>
             <div class="my-profile-stats">
               <button class="stat-chip" id="myStatPosts"><span id="myPostCount">0</span> Posts</button>
               <button class="stat-chip" id="myStatFollowing"><span id="myFollowingCount">0</span> Following</button>
@@ -320,6 +324,36 @@
         </div>
       </div>
 
+      <!-- ===== TUNES PAGE ===== -->
+      <div class="page hidden" id="page-tunes">
+        <div class="page-header-bar">
+          <h2 class="page-title">🎵 Tunes</h2>
+          <p class="page-subtitle">What's everyone listening to?</p>
+        </div>
+        <!-- Current user's song -->
+        <div class="tunes-my-song card hidden" id="tunesMySection">
+          <div class="tunes-my-label">Your song of the moment</div>
+          <div class="tunes-current" id="tunesCurrentSong">
+            <span class="tunes-none">No song set yet — search below to pick one!</span>
+          </div>
+        </div>
+        <!-- Search -->
+        <div class="tunes-search-wrap card">
+          <div class="tunes-search-row">
+            <input type="text" id="tunesSearchInput" class="tunes-search-input" placeholder="Search for a song…" />
+            <button class="btn btn-post" id="tunesSearchBtn">Search</button>
+          </div>
+          <div class="tunes-results" id="tunesResults"></div>
+        </div>
+        <!-- Community songs -->
+        <div class="tunes-community card">
+          <div class="tunes-section-title">🎶 What everyone's listening to</div>
+          <div class="tunes-community-list" id="tunesCommunityList">
+            <div class="loading-spinner"><div class="spinner"></div></div>
+          </div>
+        </div>
+      </div>
+
       <!-- ===== GAMES PAGE ===== -->
       <div class="page hidden" id="page-games">
         <div class="page-header-bar">
@@ -351,28 +385,6 @@
         <div class="about-hero card">
           <div class="about-logo">The <span>Spark</span> ⚡</div>
           <p class="about-tagline">Social media for your generation.</p>
-        </div>
-        <div class="about-grid">
-          <div class="about-card card">
-            <div class="about-icon">⚡</div>
-            <h3>What is The Spark?</h3>
-            <p>A social platform where you share how you're feeling, post moments, and connect with people who actually get you.</p>
-          </div>
-          <div class="about-card card">
-            <div class="about-icon">💡</div>
-            <h3>Who's it for?</h3>
-            <p>Anyone who has something to say, something to share, or just wants to vibe with a community that cares.</p>
-          </div>
-          <div class="about-card card">
-            <div class="about-icon">🔒</div>
-            <h3>Your privacy</h3>
-            <p>Set your account to private and only your followers will see your posts. You stay in control.</p>
-          </div>
-          <div class="about-card card">
-            <div class="about-icon">🎮</div>
-            <h3>More than social</h3>
-            <p>Trivia, vibe checks, DMs, hashtags — The Spark is a whole world. There's always something happening.</p>
-          </div>
         </div>
         <div class="about-footer card">
           <p class="about-creator-text">
