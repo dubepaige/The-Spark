@@ -301,6 +301,15 @@
           <span class="save-confirm hidden" id="saveConfirm">✓ Saved!</span>
         </div>
 
+        <!-- Follow Requests -->
+        <div class="follow-requests-card card hidden" id="followRequestsCard">
+          <div class="follow-requests-title">Follow Requests <span class="follow-req-count" id="followReqCount"></span></div>
+          <div id="followRequestsList"></div>
+        </div>
+
+        <!-- My Stats link -->
+        <button class="btn-my-stats" id="myStatsBtn">📊 My Stats</button>
+
         <div class="posts-feed" id="myPostsFeed">
           <div class="loading-spinner"><div class="spinner"></div></div>
         </div>
@@ -414,6 +423,20 @@
           <p class="page-subtitle">Manage users and passwords</p>
         </div>
         <div id="adminUserList"></div>
+      </div>
+
+      <!-- ===== MY STATS PAGE ===== -->
+      <div class="page hidden" id="page-stats">
+        <div class="page-header-bar" style="display:flex;align-items:center;gap:12px">
+          <button class="btn-back" id="backFromStats">← My Profile</button>
+          <div>
+            <h2 class="page-title">📊 My Stats</h2>
+            <p class="page-subtitle">A look at your Spark activity</p>
+          </div>
+        </div>
+        <div id="statsContent">
+          <div class="loading-spinner"><div class="spinner"></div></div>
+        </div>
       </div>
 
     </main>

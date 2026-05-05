@@ -72,6 +72,7 @@ async function navigateTo(page) {
   if (page === 'tunes')     await loadTunes()
   if (page === 'games')     loadGames()
   if (page === 'admin')     await loadAdminPage()
+  if (page === 'stats')     await loadMyStats()
   // 'about' is static HTML — nothing to load
 }
 
@@ -702,13 +703,21 @@ async function openProfileDetail(profile) {
   const followBtn = document.getElementById('followBtn')
   if (currentUser && currentUser.id !== profile.id) {
     followBtn.classList.remove('hidden')
-    const { data: existing } = await supabase
-      .from('follows').select('id').eq('follower_id', currentUser.id).eq('following_id', profile.id).maybeSingle()
-
-    const isFollowing = !!existing
-    followBtn.textContent = isFollowing ? 'Following' : 'Follow'
-    followBtn.className   = `btn-follow${isFollowing ? ' following' : ''}`
-    followBtn.onclick     = () => toggleFollow(profile.id, followBtn)
+    const [{ data: existing }, { data: existingReq }] = await Promise.all([
+      supabase.from('follows').select('id').eq('follower_id', currentUser.id).eq('following_id', profile.id).maybeSingle(),
+      supabase.from('follow_requests').select('id').eq('requester_id', currentUser.id).eq('target_id', profile.id).maybeSingle(),
+    ])
+    if (existing) {
+      followBtn.textContent = 'Following'
+      followBtn.className   = 'btn-follow following'
+    } else if (existingReq) {
+      followBtn.textContent = 'Requested'
+      followBtn.className   = 'btn-follow requested'
+    } else {
+      followBtn.textContent = 'Follow'
+      followBtn.className   = 'btn-follow'
+    }
+    followBtn.onclick = () => toggleFollow(profile.id, followBtn, !!profile.is_private)
   } else {
     followBtn.classList.add('hidden')
   }
@@ -827,6 +836,17 @@ async function loadMyProfile() {
       currentProfile.is_private = privateToggle.checked
     }
   }
+
+  // My Stats button
+  const myStatsBtn = document.getElementById('myStatsBtn')
+  if (myStatsBtn) myStatsBtn.onclick = () => navigateTo('stats')
+
+  // Back from stats
+  const backFromStats = document.getElementById('backFromStats')
+  if (backFromStats) backFromStats.onclick = () => navigateTo('myprofile')
+
+  // Follow requests
+  await loadFollowRequests()
 
   // Save profile button
   document.getElementById('saveProfileBtn').onclick = saveProfile
@@ -952,20 +972,32 @@ async function saveProfile() {
 }
 
 // ===== FOLLOWS =====
-async function toggleFollow(profileId, btn) {
+async function toggleFollow(profileId, btn, targetIsPrivate = false) {
   if (!currentUser) { openModal('login'); return }
 
-  const isFollowing = btn.classList.contains('following')
-  if (isFollowing) {
+  if (btn.classList.contains('following')) {
+    // Unfollow
     await supabase.from('follows').delete()
       .eq('follower_id', currentUser.id).eq('following_id', profileId)
     btn.textContent = 'Follow'
-    btn.classList.remove('following')
+    btn.className = 'btn-follow'
     followingIds.delete(profileId)
+  } else if (btn.classList.contains('requested')) {
+    // Cancel pending request
+    await supabase.from('follow_requests').delete()
+      .eq('requester_id', currentUser.id).eq('target_id', profileId)
+    btn.textContent = 'Follow'
+    btn.className = 'btn-follow'
+  } else if (targetIsPrivate) {
+    // Send follow request
+    await supabase.from('follow_requests').insert({ requester_id: currentUser.id, target_id: profileId })
+    btn.textContent = 'Requested'
+    btn.className = 'btn-follow requested'
   } else {
+    // Normal follow
     await supabase.from('follows').insert({ follower_id: currentUser.id, following_id: profileId })
     btn.textContent = 'Following'
-    btn.classList.add('following')
+    btn.className = 'btn-follow following'
     followingIds.add(profileId)
   }
 
@@ -973,6 +1005,213 @@ async function toggleFollow(profileId, btn) {
   const { count } = await supabase
     .from('follows').select('*', { count: 'exact', head: true }).eq('following_id', profileId)
   setEl('detailFollowerCount', count ?? 0)
+}
+
+// ===== FOLLOW REQUESTS =====
+async function loadFollowRequests() {
+  if (!currentUser) return
+  const card = document.getElementById('followRequestsCard')
+  const list = document.getElementById('followRequestsList')
+  const badge = document.getElementById('followReqCount')
+  if (!card || !list) return
+
+  const { data: requests } = await supabase
+    .from('follow_requests')
+    .select('id, requester_id, created_at, profiles!follow_requests_requester_id_fkey(id, username, full_name, avatar_letter, avatar_url)')
+    .eq('target_id', currentUser.id)
+    .order('created_at', { ascending: false })
+
+  if (!requests?.length) { card.classList.add('hidden'); return }
+
+  card.classList.remove('hidden')
+  badge.textContent = requests.length
+  list.innerHTML = ''
+
+  requests.forEach(req => {
+    const p = req.profiles
+    const letter = p?.avatar_letter || '?'
+    const div = document.createElement('div')
+    div.className = 'follow-req-item'
+    div.innerHTML = `
+      <div class="avatar-circle" style="width:36px;height:36px;font-size:1rem;flex-shrink:0;background:${p?.avatar_url ? 'none' : colorFromLetter(letter)};overflow:hidden">
+        ${p?.avatar_url ? `<img src="${p.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />` : letter}
+      </div>
+      <div class="follow-req-info">
+        <div class="follow-req-name">${escapeHtml(p?.full_name || p?.username || 'Unknown')}</div>
+        <div class="follow-req-handle">@${escapeHtml(p?.username || '')}</div>
+      </div>
+      <div class="follow-req-actions">
+        <button class="btn-req-accept">Accept</button>
+        <button class="btn-req-deny">Deny</button>
+      </div>`
+    div.querySelector('.btn-req-accept').addEventListener('click', () => acceptFollowRequest(req.id, req.requester_id, div))
+    div.querySelector('.btn-req-deny').addEventListener('click', () => denyFollowRequest(req.id, div))
+    list.appendChild(div)
+  })
+}
+
+async function acceptFollowRequest(requestId, requesterId, itemEl) {
+  // Create the follow then delete the request
+  await supabase.from('follows').insert({ follower_id: requesterId, following_id: currentUser.id })
+  await supabase.from('follow_requests').delete().eq('id', requestId)
+  itemEl.remove()
+  // Hide card if empty
+  if (!document.getElementById('followRequestsList').children.length) {
+    document.getElementById('followRequestsCard').classList.add('hidden')
+  } else {
+    const remaining = document.getElementById('followRequestsList').children.length
+    document.getElementById('followReqCount').textContent = remaining
+  }
+}
+
+async function denyFollowRequest(requestId, itemEl) {
+  await supabase.from('follow_requests').delete().eq('id', requestId)
+  itemEl.remove()
+  if (!document.getElementById('followRequestsList').children.length) {
+    document.getElementById('followRequestsCard').classList.add('hidden')
+  } else {
+    const remaining = document.getElementById('followRequestsList').children.length
+    document.getElementById('followReqCount').textContent = remaining
+  }
+}
+
+// ===== MY STATS =====
+async function loadMyStats() {
+  if (!currentUser) { navigateTo('myprofile'); return }
+
+  const container = document.getElementById('statsContent')
+  container.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>'
+
+  // Fetch all user posts
+  const { data: posts } = await supabase
+    .from('posts')
+    .select('id, content, feeling, created_at')
+    .eq('user_id', currentUser.id)
+    .order('created_at', { ascending: true })
+
+  // Fetch sparks received (slaps on my posts)
+  const { count: sparksReceived } = await supabase
+    .from('slaps')
+    .select('id', { count: 'exact', head: true })
+    .in('post_id', (posts || []).map(p => p.id))
+
+  // Fetch follower/following counts
+  const [{ count: followerCount }, { count: followingCount }] = await Promise.all([
+    supabase.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', currentUser.id),
+    supabase.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', currentUser.id),
+  ])
+
+  const allPosts = posts || []
+  const totalPosts = allPosts.length
+
+  // ── Feelings breakdown ──
+  const feelingCounts = {}
+  allPosts.forEach(p => {
+    if (!p.feeling) return
+    feelingCounts[p.feeling] = (feelingCounts[p.feeling] || 0) + 1
+  })
+  const topFeelings = Object.entries(feelingCounts).sort((a, b) => b[1] - a[1]).slice(0, 8)
+  const maxFeeling = topFeelings[0]?.[1] || 1
+
+  // ── Post length ──
+  const wordCounts = allPosts.map(p => (p.content || '').trim().split(/\s+/).filter(Boolean).length)
+  const avgWords = wordCounts.length ? Math.round(wordCounts.reduce((a, b) => a + b, 0) / wordCounts.length) : 0
+  const maxWords = wordCounts.length ? Math.max(...wordCounts) : 0
+  const minWords = wordCounts.length ? Math.min(...wordCounts.filter(w => w > 0)) : 0
+
+  // ── Activity by day of week ──
+  const dayCounts = [0, 0, 0, 0, 0, 0, 0] // Sun=0 … Sat=6
+  allPosts.forEach(p => { dayCounts[new Date(p.created_at).getDay()]++ })
+  const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  const maxDay = Math.max(...dayCounts, 1)
+
+  // ── Top hashtags ──
+  const tagCounts = {}
+  allPosts.forEach(p => {
+    const matches = (p.content || '').match(/#\w+/g) || []
+    matches.forEach(t => { tagCounts[t.toLowerCase()] = (tagCounts[t.toLowerCase()] || 0) + 1 })
+  })
+  const topTags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]).slice(0, 8)
+
+  // ── Streak ──
+  let streak = 0
+  if (allPosts.length) {
+    const postDays = new Set(allPosts.map(p => new Date(p.created_at).toDateString()))
+    let d = new Date(); d.setHours(0, 0, 0, 0)
+    while (postDays.has(d.toDateString())) { streak++; d.setDate(d.getDate() - 1) }
+  }
+
+  // ── Render ──
+  container.innerHTML = `
+    <div class="stats-overview">
+      <div class="stat-overview-card">
+        <div class="stat-overview-num">${totalPosts}</div>
+        <div class="stat-overview-label">Posts</div>
+      </div>
+      <div class="stat-overview-card">
+        <div class="stat-overview-num">${sparksReceived ?? 0}</div>
+        <div class="stat-overview-label">Sparks Received</div>
+      </div>
+      <div class="stat-overview-card">
+        <div class="stat-overview-num">${followerCount ?? 0}</div>
+        <div class="stat-overview-label">Followers</div>
+      </div>
+      <div class="stat-overview-card">
+        <div class="stat-overview-num">${streak}</div>
+        <div class="stat-overview-label">Day Streak 🔥</div>
+      </div>
+    </div>
+
+    ${topFeelings.length ? `
+    <div class="card stats-section">
+      <div class="stats-section-title">✨ Top Feelings</div>
+      ${topFeelings.map(([feeling, count]) => `
+        <div class="stat-bar-row">
+          <div class="stat-bar-label">${escapeHtml(feeling)}</div>
+          <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${Math.round(count / maxFeeling * 100)}%"></div></div>
+          <div class="stat-bar-count">${count}</div>
+        </div>`).join('')}
+    </div>` : ''}
+
+    <div class="card stats-section">
+      <div class="stats-section-title">📏 Post Length</div>
+      ${totalPosts === 0 ? `<p class="stats-empty">No posts yet!</p>` : `
+      <div class="stats-length-row">
+        <div class="stats-length-card">
+          <div class="stats-length-num">${avgWords}</div>
+          <div class="stats-length-label">Avg words</div>
+        </div>
+        <div class="stats-length-card">
+          <div class="stats-length-num">${maxWords}</div>
+          <div class="stats-length-label">Longest post</div>
+        </div>
+        <div class="stats-length-card">
+          <div class="stats-length-num">${minWords || 0}</div>
+          <div class="stats-length-label">Shortest post</div>
+        </div>
+      </div>`}
+    </div>
+
+    <div class="card stats-section">
+      <div class="stats-section-title">📅 Posts by Day of Week</div>
+      ${totalPosts === 0 ? `<p class="stats-empty">No posts yet!</p>` : `
+      <div class="stats-day-grid">
+        ${dayCounts.map((count, i) => `
+          <div class="stats-day-col">
+            <div class="stats-day-bar" style="height:${Math.round(count / maxDay * 64) + 4}px" title="${count} post${count !== 1 ? 's' : ''}"></div>
+            <div class="stats-day-label">${dayLabels[i]}</div>
+          </div>`).join('')}
+      </div>`}
+    </div>
+
+    ${topTags.length ? `
+    <div class="card stats-section">
+      <div class="stats-section-title">🏷️ Your Top Hashtags</div>
+      <div class="stats-hashtag-list">
+        ${topTags.map(([tag, count]) => `<div class="stats-hashtag-chip">${escapeHtml(tag)} <span>×${count}</span></div>`).join('')}
+      </div>
+    </div>` : ''}
+  `
 }
 
 async function openFollowsModal(type) {
