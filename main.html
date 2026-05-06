@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Spark</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#8B5CF6" />
+
+  <!-- iOS "Add to Home Screen" support -->
+  <meta name="apple-mobile-web-app-capable"          content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title"            content="The Spark" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+
+  <!-- Fonts & styles -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.css" />
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-the">The</span> <span class="logo-slap">Spark</span><span class="logo-bolt">⚡</span>
+      </div>
+
+      <!-- Desktop Nav -->
+      <nav class="header-nav" id="desktopNav">
+        <a href="#" class="nav-link active" data-page="feed">Feed</a>
+        <a href="#" class="nav-link"        data-page="videos">Videos</a>
+        <a href="#" class="nav-link"        data-page="profiles">Profiles</a>
+        <a href="#" class="nav-link"        data-page="tunes">🎵 Tunes</a>
+        <a href="#" class="nav-link"        data-page="games">🎮 Games</a>
+        <a href="#" class="nav-link"        data-page="about">About</a>
+        <a href="#" class="nav-link nav-messages hidden" data-page="messages">💬 DMs</a>
+        <a href="#" class="nav-link nav-myprofile hidden" data-page="myprofile">My Profile</a>
+        <a href="#" class="nav-link nav-admin hidden" data-page="admin">🛡️ Admin</a>
+      </nav>
+
+      <button class="search-btn" id="searchBtn" title="Search">🔍</button>
+
+      <div class="header-user" id="headerUser">
+        <button class="btn btn-login"  id="loginBtn">Log In</button>
+        <button class="btn btn-signup" id="signupBtn">Sign Up</button>
+      </div>
+
+      <!-- Mobile hamburger -->
+      <button class="hamburger" id="hamburger" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+
+    <!-- Mobile Nav Dropdown -->
+    <div class="mobile-nav hidden" id="mobileNav">
+      <a href="#" class="mobile-nav-link" data-page="feed">⚡ Feed</a>
+      <a href="#" class="mobile-nav-link" data-page="videos">🎬 Videos</a>
+      <a href="#" class="mobile-nav-link" data-page="profiles">✨ Profiles</a>
+      <a href="#" class="mobile-nav-link" data-page="tunes">🎵 Tunes</a>
+      <a href="#" class="mobile-nav-link" data-page="games">🎮 Games</a>
+      <a href="#" class="mobile-nav-link" data-page="about">ℹ️ About</a>
+      <a href="#" class="mobile-nav-link mobile-messages hidden" data-page="messages">💬 DMs</a>
+      <a href="#" class="mobile-nav-link mobile-myprofile hidden" data-page="myprofile">👤 My Profile</a>
+      <a href="#" class="mobile-nav-link mobile-admin hidden" data-page="admin">🛡️ Admin</a>
+    </div>
+  </header>
+
+  <!-- MAIN LAYOUT -->
+  <div class="site-wrapper">
+
+    <!-- SIDEBAR (desktop) -->
+    <aside class="sidebar">
+      <div class="sidebar-profile">
+        <div class="profile-avatar-wrap">
+          <div class="profile-avatar avatar-circle" id="sidebarAvatar">?</div>
+        </div>
+        <div class="profile-name"   id="sidebarName">Guest</div>
+        <div class="profile-handle" id="sidebarHandle">@thespark</div>
+        <div class="profile-stats">
+          <div class="stat"><span class="stat-num" id="statPosts">0</span><span class="stat-label">Posts</span></div>
+          <div class="stat"><span class="stat-num" id="statLikes">0</span><span class="stat-label">Sparks</span></div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-title">Who's Sparkin'</div>
+        <ul class="who-list" id="whoList">
+          <li class="who-item skeleton"></li>
+          <li class="who-item skeleton"></li>
+          <li class="who-item skeleton"></li>
+        </ul>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-title">Moods Right Now</div>
+        <div class="tag-cloud">
+          <span class="tag">⚡ Epic</span>
+          <span class="tag">🎭 Dramatic</span>
+          <span class="tag">🎵 Musical</span>
+          <span class="tag">🤩 Awesome</span>
+          <span class="tag">😴 Bored</span>
+          <span class="tag">💅 Fabulous</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-title">🔥 Top Hashtags</div>
+        <div class="tag-cloud" id="topHashtags">
+          <div class="loading-spinner" style="padding:8px"><div class="spinner"></div></div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- PAGES -->
+    <main class="content-area">
+
+      <!-- ===== FEED PAGE ===== -->
+      <div class="page" id="page-feed">
+        <div class="composer card" id="composer">
+          <div class="composer-top">
+            <div class="composer-avatar avatar-circle" id="composerAvatar">?</div>
+            <div class="composer-fields">
+              <select class="feeling-select" id="feelingSelect">
+                <option value="">Pick a feeling…</option>
+                <option value="Awesome 🤩">Awesome 🤩</option>
+                <option value="Epic ⚡">Epic ⚡</option>
+                <option value="Excited 🎉">Excited 🎉</option>
+                <option value="Happy 😊">Happy 😊</option>
+                <option value="Fabulous 💅">Fabulous 💅</option>
+                <option value="Musical 🎵">Musical 🎵</option>
+                <option value="Creative 🎨">Creative 🎨</option>
+                <option value="Dramatic 🎭">Dramatic 🎭</option>
+                <option value="Inspired ✨">Inspired ✨</option>
+                <option value="In Love 💕">In Love 💕</option>
+                <option value="Silly 🤪">Silly 🤪</option>
+                <option value="Rebellious 😈">Rebellious 😈</option>
+                <option value="Legendary 🏆">Legendary 🏆</option>
+                <option value="Caffeinated ☕">Caffeinated ☕</option>
+                <option value="Hungry 🍕">Hungry 🍕</option>
+                <option value="Confused 🤔">Confused 🤔</option>
+                <option value="Nervous 😬">Nervous 😬</option>
+                <option value="Annoyed 🙄">Annoyed 🙄</option>
+                <option value="Tired 😪">Tired 😪</option>
+                <option value="Sad 😢">Sad 😢</option>
+                <option value="Angry 😤">Angry 😤</option>
+                <option value="Bored 😴">Bored 😴</option>
+                <option value="__custom__">✏️ Custom feeling…</option>
+              </select>
+              <div class="custom-feeling-row hidden" id="customFeelingRow">
+                <input type="text" id="customFeelingInput" class="custom-feeling-input" placeholder="e.g. Obsessed" maxlength="40" />
+                <div class="emoji-picker-wrap">
+                  <button type="button" class="emoji-picker-btn" id="emojiPickerBtn" title="Pick an emoji">😊</button>
+                  <div class="emoji-picker hidden" id="emojiPicker"></div>
+                </div>
+              </div>
+              <textarea class="composer-input" id="composerInput"
+                placeholder="Tell everyone why…" maxlength="280"></textarea>
+            </div>
+          </div>
+
+          <!-- Media preview -->
+          <div class="media-preview hidden" id="mediaPreview">
+            <button class="media-preview-remove" id="mediaRemove">&times;</button>
+            <img id="mediaPreviewImg" class="hidden" alt="preview" />
+            <video id="mediaPreviewVid" class="hidden" controls></video>
+          </div>
+
+          <div class="composer-bottom">
+            <div class="composer-options">
+              <button type="button" class="composer-opt post-privacy-btn" id="postPrivacyBtn" title="Who can see this post">🌍 Public</button>
+              <label class="composer-opt" for="mediaFileInput" title="Add photo or video">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                Photo / Video
+              </label>
+              <input type="file" id="mediaFileInput" accept="image/*,video/*" style="display:none" />
+            </div>
+            <div class="composer-right">
+              <span class="char-count" id="charCount">280</span>
+              <button class="btn btn-post" id="postBtn" disabled>Spark it!</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="feed-tabs" id="feedTabs">
+          <button class="feed-tab active" data-tab="explore">✨ Explore</button>
+          <button class="feed-tab"        data-tab="following">👥 Following</button>
+        </div>
+
+        <div class="posts-feed" id="postsFeed">
+          <div class="loading-spinner"><div class="spinner"></div></div>
+        </div>
+      </div>
+
+      <!-- ===== VIDEOS PAGE ===== -->
+      <div class="page hidden" id="page-videos">
+        <div class="page-header-bar">
+          <h2 class="page-title">⚡ Videos</h2>
+          <p class="page-subtitle">Everyone's latest clips</p>
+        </div>
+        <div class="videos-grid" id="videosGrid">
+          <div class="loading-spinner"><div class="spinner"></div></div>
+        </div>
+      </div>
+
+      <!-- ===== PROFILES PAGE ===== -->
+      <div class="page hidden" id="page-profiles">
+        <div class="page-header-bar">
+          <h2 class="page-title">✨ Profiles</h2>
+          <p class="page-subtitle">Everyone on The Spark</p>
+        </div>
+        <div class="profiles-grid" id="profilesGrid">
+          <div class="loading-spinner"><div class="spinner"></div></div>
+        </div>
+        <div class="profile-detail hidden" id="profileDetail">
+          <button class="btn-back" id="backToProfiles">← Back</button>
+          <div class="profile-detail-header card">
+            <div class="profile-detail-avatar avatar-circle" id="detailAvatar"></div>
+            <div class="profile-detail-info">
+              <div class="profile-detail-name"   id="detailName"></div>
+              <div class="profile-detail-handle" id="detailHandle"></div>
+              <div class="profile-detail-meta hidden" id="detailMeta"></div>
+              <div class="profile-song hidden" id="detailSong"></div>
+              <div class="profile-detail-stats">
+                <span id="detailPostCount">0</span> posts ·
+                <span id="detailFollowerCount">0</span> followers
+              </div>
+              <div class="profile-detail-actions">
+                <button class="btn-follow hidden" id="followBtn">Follow</button>
+                <button class="btn-dm     hidden" id="dmBtn">💬 Message</button>
+                <button class="btn-block  hidden" id="blockBtn">🚫 Block</button>
+              </div>
+            </div>
+          </div>
+          <div class="posts-feed" id="profilePostsFeed"></div>
+        </div>
+      </div>
+
+      <!-- ===== MY PROFILE PAGE ===== -->
+      <div class="page hidden" id="page-myprofile">
+        <div class="my-profile-header card">
+          <div class="my-avatar-section">
+            <div class="my-avatar-wrap">
+              <div class="my-avatar avatar-circle" id="myAvatar">?</div>
+              <label class="avatar-upload-btn" for="avatarFileInput" title="Change photo">📷</label>
+              <input type="file" id="avatarFileInput" accept="image/*" style="display:none" />
+            </div>
+          </div>
+          <div class="my-profile-info">
+            <div class="my-profile-name"   id="myProfileName"></div>
+            <div class="my-profile-handle" id="myProfileHandle"></div>
+            <div class="my-profile-meta"   id="myProfileMeta"></div>
+            <div class="profile-song hidden" id="myProfileSong"></div>
+            <div class="my-profile-stats">
+              <button class="stat-chip" id="myStatPosts"><span id="myPostCount">0</span> Posts</button>
+              <button class="stat-chip" id="myStatFollowing"><span id="myFollowingCount">0</span> Following</button>
+              <button class="stat-chip" id="myStatFollowers"><span id="myFollowerCount">0</span> Followers</button>
+              <button class="stat-chip stat-chip-stats" id="myStatsBtn">📊 My Stats</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Edit profile info -->
+        <div class="edit-profile-card card">
+          <div class="edit-profile-title">Edit Profile</div>
+          <div class="edit-profile-fields">
+            <div class="form-group">
+              <label>College / University</label>
+              <input type="text" id="editCollege" placeholder="e.g. Hollywood Arts University" maxlength="80" />
+            </div>
+            <div class="form-group">
+              <label>Industry</label>
+              <select id="editIndustry">
+                <option value="">— Select —</option>
+                <option value="Arts & Entertainment">Arts & Entertainment</option>
+                <option value="Business">Business</option>
+                <option value="Education">Education</option>
+                <option value="Finance">Finance</option>
+                <option value="Government">Government</option>
+                <option value="Healthcare / Medical">Healthcare / Medical</option>
+                <option value="Law">Law</option>
+                <option value="Media & Communications">Media & Communications</option>
+                <option value="Non-profit">Non-profit</option>
+                <option value="Science & Research">Science & Research</option>
+                <option value="Sports & Fitness">Sports & Fitness</option>
+                <option value="Tech">Tech</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group private-toggle-group">
+            <label>Account Privacy</label>
+            <label class="toggle-label">
+              <input type="checkbox" id="privateToggle" />
+              <span class="toggle-slider"></span>
+              <span class="toggle-text">Private account 🔒</span>
+            </label>
+            <p class="toggle-hint">When on, only your followers can see your posts.</p>
+          </div>
+          <button class="btn btn-post" id="saveProfileBtn">Save Changes</button>
+          <span class="save-confirm hidden" id="saveConfirm">✓ Saved!</span>
+        </div>
+
+        <!-- Close Friends -->
+        <div class="close-friends-card card" id="closeFriendsCard">
+          <div class="close-friends-title">⭐ Close Friends</div>
+          <p class="close-friends-hint">Posts set to "Close Friends" are only visible to people on this list.</p>
+          <div class="close-friends-add-row">
+            <input type="text" id="cfSearchInput" class="close-friends-input" placeholder="Add by @username…" maxlength="40" />
+            <button class="btn-cf-add" id="cfAddBtn">Add</button>
+          </div>
+          <div id="closeFriendsList"></div>
+        </div>
+
+        <!-- Follow Requests -->
+        <div class="follow-requests-card card hidden" id="followRequestsCard">
+          <div class="follow-requests-title">Follow Requests <span class="follow-req-count" id="followReqCount"></span></div>
+          <div id="followRequestsList"></div>
+        </div>
+
+        <div class="posts-feed" id="myPostsFeed">
+          <div class="loading-spinner"><div class="spinner"></div></div>
+        </div>
+      </div>
+
+      <!-- ===== MESSAGES PAGE ===== -->
+      <div class="page hidden" id="page-messages">
+        <div class="page-header-bar">
+          <h2 class="page-title">💬 DMs</h2>
+          <p class="page-subtitle">Your conversations</p>
+        </div>
+        <div id="conversationsList"></div>
+        <div class="conversation-view hidden" id="conversationView">
+          <button class="btn-back" id="backToConvos">← Conversations</button>
+          <div class="convo-header card" id="convoHeader"></div>
+          <div class="messages-thread" id="messagesThread"></div>
+          <div class="message-composer card">
+            <input type="text" id="dmInput" class="comment-input" placeholder="Send a message…" maxlength="500" />
+            <button class="btn btn-post" id="dmSendBtn">Send ⚡</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== TUNES PAGE ===== -->
+      <div class="page hidden" id="page-tunes">
+        <div class="page-header-bar">
+          <h2 class="page-title">🎵 Tunes</h2>
+          <p class="page-subtitle">What's everyone listening to?</p>
+        </div>
+        <!-- Current user's song -->
+        <div class="tunes-my-song card hidden" id="tunesMySection">
+          <div class="tunes-my-label">Your song of the moment</div>
+          <div class="tunes-current" id="tunesCurrentSong">
+            <span class="tunes-none">No song set yet — search below to pick one!</span>
+          </div>
+        </div>
+        <!-- Search -->
+        <div class="tunes-search-wrap card">
+          <div class="tunes-search-row">
+            <input type="text" id="tunesSearchInput" class="tunes-search-input" placeholder="Search for a song…" />
+            <button class="btn btn-post" id="tunesSearchBtn">Search</button>
+          </div>
+          <div class="tunes-results" id="tunesResults"></div>
+        </div>
+        <!-- Community songs -->
+        <div class="tunes-community card">
+          <div class="tunes-section-title">🎶 What everyone's listening to</div>
+          <div class="tunes-community-list" id="tunesCommunityList">
+            <div class="loading-spinner"><div class="spinner"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== GAMES PAGE ===== -->
+      <div class="page hidden" id="page-games">
+        <div class="page-header-bar">
+          <h2 class="page-title">🎮 Games</h2>
+          <p class="page-subtitle">Take a break, have fun!</p>
+        </div>
+        <div class="games-grid" id="gamesGrid">
+          <div class="game-card card" data-game="trivia">
+            <div class="game-card-icon">🎭</div>
+            <div class="game-card-title">Victorious Trivia</div>
+            <div class="game-card-desc">How well do you know Hollywood Arts?</div>
+            <button class="btn btn-post game-start-btn" data-game="trivia">Play!</button>
+          </div>
+          <div class="game-card card" data-game="vibe">
+            <div class="game-card-icon">✨</div>
+            <div class="game-card-title">Vibe Check</div>
+            <div class="game-card-desc">Find out what kind of Spark user you are.</div>
+            <button class="btn btn-post game-start-btn" data-game="vibe">Take the Quiz!</button>
+          </div>
+        </div>
+        <div class="game-play-area hidden card" id="gamePlayArea">
+          <button class="btn-back" id="gameBack">← Games</button>
+          <div id="gameContent"></div>
+        </div>
+      </div>
+
+      <!-- ===== ABOUT PAGE ===== -->
+      <div class="page hidden" id="page-about">
+        <div class="about-hero card">
+          <div class="about-logo">The <span>Spark</span> ⚡</div>
+          <p class="about-tagline">Social media for your generation.</p>
+        </div>
+        <div class="about-footer card">
+          <p class="about-creator-text">
+            This site was created by <strong>Paige Dube</strong>, a University of Vermont Data Science student.
+            It was created as a final project for a Vibe Coding Independent Study, and was built partially using Claude Code.
+            This website is still being updated, and the contact form is functional —
+            I'd love to hear your input!
+          </p>
+          <div class="about-links">
+            <a class="about-link" href="https://www.linkedin.com/in/paige-dube-81b997273" target="_blank" rel="noopener">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+              LinkedIn
+            </a>
+            <a class="about-link" href="https://github.com/dubepaige" target="_blank" rel="noopener">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+              GitHub
+            </a>
+          </div>
+          <button class="btn btn-post" data-page="feed">Start Sparkin'!</button>
+        </div>
+      </div>
+
+      <!-- ===== ADMIN PAGE ===== -->
+      <div class="page hidden" id="page-admin">
+        <div class="page-header-bar">
+          <h2 class="page-title">🛡️ Admin Panel</h2>
+          <p class="page-subtitle">Manage users and passwords</p>
+        </div>
+        <div id="adminUserList"></div>
+      </div>
+
+      <!-- ===== MY STATS PAGE ===== -->
+      <div class="page hidden" id="page-stats">
+        <div class="page-header-bar" style="display:flex;align-items:center;gap:12px">
+          <button class="btn-back" id="backFromStats">← My Profile</button>
+          <div>
+            <h2 class="page-title">📊 My Stats</h2>
+            <p class="page-subtitle">A look at your Spark activity</p>
+          </div>
+        </div>
+        <div id="statsContent">
+          <div class="loading-spinner"><div class="spinner"></div></div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- SEARCH MODAL -->
+  <div class="modal-overlay hidden" id="searchModal">
+    <div class="search-modal card">
+      <div class="search-header">
+        <span class="search-icon-label">🔍</span>
+        <input type="text" id="searchInput" class="search-input" placeholder="Search people, posts, #tags…" autocomplete="off" />
+        <button class="modal-close" id="searchClose">✕</button>
+      </div>
+      <div id="searchResults" class="search-results"></div>
+    </div>
+  </div>
+
+  <!-- AUTH MODAL -->
+  <div class="modal-overlay hidden" id="authModal">
+    <div class="modal card">
+      <button class="modal-close" id="modalClose">&times;</button>
+      <div class="modal-tabs">
+        <button class="modal-tab active" id="tabLogin">Log In</button>
+        <button class="modal-tab"        id="tabSignup">Sign Up</button>
+      </div>
+      <form class="auth-form" id="loginForm">
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" id="loginUsername" placeholder="your username" required autocomplete="username" />
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password" />
+        </div>
+        <div class="form-error hidden" id="loginError"></div>
+        <button type="submit" class="btn btn-post full-width">Log In</button>
+      </form>
+      <form class="auth-form hidden" id="signupForm">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" id="signupFullName" placeholder="Tori Vega" required maxlength="60" autocomplete="name" />
+        </div>
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" id="signupUsername" placeholder="ToriVega" required maxlength="30" autocomplete="username" />
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="signupEmail" placeholder="you@hollywoodarts.edu" required autocomplete="email" />
+        </div>
+        <div class="form-group">
+          <label>Birthday</label>
+          <input type="date" id="signupBirthday" required />
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="signupPassword" placeholder="Min 6 characters" required minlength="6" autocomplete="new-password" />
+        </div>
+        <div class="form-group">
+          <label>Retype Password</label>
+          <input type="password" id="signupPasswordConfirm" placeholder="••••••••" required autocomplete="new-password" />
+        </div>
+        <div class="form-error hidden" id="signupError"></div>
+        <button type="submit" class="btn btn-post full-width">Join The Spark!</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- CROP MODAL -->
+  <div class="modal-overlay hidden" id="cropModal">
+    <div class="crop-modal card">
+      <button class="modal-close" id="cropModalClose">&times;</button>
+      <h3 class="crop-modal-title">📷 Crop Your Photo</h3>
+      <p class="crop-modal-hint">Drag to reposition · Pinch or scroll to zoom</p>
+      <div class="crop-container">
+        <img id="cropImage" alt="Crop preview" />
+      </div>
+      <div class="crop-actions">
+        <button class="btn btn-logout" id="cropCancel">Cancel</button>
+        <button class="btn btn-post"   id="cropConfirm">✓ Save Photo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOLLOWS MODAL -->
+  <div class="modal-overlay hidden" id="followsModal">
+    <div class="modal card">
+      <button class="modal-close" id="followsModalClose">&times;</button>
+      <h3 class="follows-modal-title" id="followsModalTitle">Following</h3>
+      <div class="follows-list" id="followsList"></div>
+    </div>
+  </div>
+
+  <!-- POST TEMPLATE -->
+  <template id="postTemplate">
+    <article class="post card">
+      <div class="post-header">
+        <div class="post-avatar avatar-circle"></div>
+        <div class="post-meta">
+          <span class="post-username"></span>
+          <span class="post-handle"></span>
+          <span class="post-time"></span>
+        </div>
+        <button class="post-toggle-privacy hidden" title="Public — click to make private">🌍</button>
+        <button class="post-delete-btn hidden" title="Delete post">🗑</button>
+        <span class="post-private-badge hidden" title="Private post">🔒</span>
+      </div>
+      <div class="post-body">
+        <div class="post-feeling"></div>
+        <p class="post-explanation"></p>
+        <div class="post-media hidden"></div>
+      </div>
+      <div class="post-actions">
+        <button class="action-btn slap-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          </svg>
+          <span class="slap-count">0</span> Sparks
+        </button>
+        <button class="action-btn comment-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+          Comment
+        </button>
+      </div>
+      <div class="comments-section hidden">
+        <div class="comments-list"></div>
+        <div class="comment-composer">
+          <input type="text" class="comment-input" placeholder="Leave a comment…" maxlength="200" />
+          <button class="btn btn-comment-submit">Post</button>
+        </div>
+      </div>
+    </article>
+  </template>
+
+  <!-- SUGGESTIONS MODAL -->
+  <div class="modal-overlay hidden" id="suggestionsModal">
+    <div class="modal card">
+      <button class="modal-close" id="suggestModalClose">&times;</button>
+      <h3 class="follows-modal-title">💡 Suggestions &amp; Contact</h3>
+      <p style="color:var(--text-muted);font-size:0.84rem;margin-bottom:16px">Got an idea, a bug report, or just want to say hi? Send it over!</p>
+      <form class="auth-form" id="suggestForm">
+        <div class="form-group">
+          <label>Your Name <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
+          <input type="text" id="suggestName" placeholder="Tori Vega" maxlength="80" autocomplete="name" />
+        </div>
+        <div class="form-group">
+          <label>Message</label>
+          <textarea id="suggestMessage" class="composer-input" placeholder="What's on your mind?" maxlength="1000" rows="5" required style="min-height:110px"></textarea>
+        </div>
+        <div class="form-error  hidden" id="suggestError"></div>
+        <div class="suggest-success hidden" id="suggestSuccess">⚡ Got it — thanks!</div>
+        <button type="submit" class="btn btn-post full-width" id="suggestSubmitBtn">Send It! ⚡</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- FLOATING FEEDBACK BUTTON -->
+  <button class="feedback-fab" id="feedbackBtn" title="Suggestions &amp; Contact">💡</button>
+
+  <script type="module" src="js/app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/The-Spark/sw.js', { updateViaCache: 'none' })
+          .catch(err => console.warn('SW registration failed:', err))
+      })
+    }
+  </script>
+</body>
+</html>

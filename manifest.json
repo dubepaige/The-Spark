@@ -1,0 +1,26 @@
+{
+  "name": "The Spark",
+  "short_name": "The Spark",
+  "description": "Social app for your generation ⚡",
+  "start_url": "/The-Spark/",
+  "scope": "/The-Spark/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0D0D1A",
+  "theme_color": "#8B5CF6",
+  "categories": ["social", "entertainment"],
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
