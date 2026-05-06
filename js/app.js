@@ -2,8 +2,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import Cropper from 'https://esm.sh/cropperjs@1.6.1'
 
 // ===== CONFIG =====
-const SUPABASE_URL      = ''
-const SUPABASE_ANON_KEY = ''
+const SUPABASE_URL      = 'https://jqrefxdumksvddrohmts.supabase.co'
+const SUPABASE_ANON_KEY = 'sb_publishable_hcJBTW3HNyFHd1pBEczxwA_PE0BJs62'
 const supabase          = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 // ===== STATE =====
