@@ -1821,7 +1821,9 @@ async function searchTunes(query) {
   results.innerHTML = '<div class="loading-spinner" style="padding:16px"><div class="spinner"></div></div>'
 
   try {
-    const res  = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&limit=10`)
+    const res  = await fetch(`${SUPABASE_URL}/functions/v1/itunes-search?term=${encodeURIComponent(query)}&limit=10`, {
+      headers: { apikey: SUPABASE_ANON_KEY }
+    })
     const data = await res.json()
     results.innerHTML = ''
 
