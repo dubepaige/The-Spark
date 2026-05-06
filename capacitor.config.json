@@ -1,0 +1,16 @@
+{
+  "appId": "com.thespark.app",
+  "appName": "The Spark",
+  "webDir": "www",
+  "server": {
+    "url": "https://dubepaige.github.io/The-Spark/",
+    "cleartext": false,
+    "allowNavigation": ["dubepaige.github.io"]
+  },
+  "ios": {
+    "contentInset": "automatic",
+    "backgroundColor": "#0D0D1A",
+    "preferredContentMode": "mobile",
+    "scrollEnabled": true
+  }
+}
