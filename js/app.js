@@ -298,47 +298,117 @@ function switchModalTab(tab) {
 // ===== COMPOSER =====
 function setupComposer() {
   const input      = document.getElementById('composerInput')
-  const select     = document.getElementById('feelingSelect')
+  const select     = document.getElementById('feelingSelect')  // hidden, kept for compat
   const charCount  = document.getElementById('charCount')
   const postBtn    = document.getElementById('postBtn')
   const fileInput  = document.getElementById('mediaFileInput')
   const preview    = document.getElementById('mediaPreview')
   const removeBtn  = document.getElementById('mediaRemove')
 
-  const customRow   = document.getElementById('customFeelingRow')
-  const customInput = document.getElementById('customFeelingInput')
-  const emojiBtn    = document.getElementById('emojiPickerBtn')
-  const emojiPicker = document.getElementById('emojiPicker')
-  const privacyBtn  = document.getElementById('postPrivacyBtn')
+  const customInput  = document.getElementById('customFeelingInput')
+  const emojiBtn     = document.getElementById('emojiPickerBtn')
+  const emojiPicker  = document.getElementById('emojiPicker')
+  const privacyBtn   = document.getElementById('postPrivacyBtn')
+  const toggleBtn    = document.getElementById('feelingToggleBtn')
+  const toggleLabel  = document.getElementById('feelingToggleLabel')
+  const toggleIcon   = document.getElementById('feelingToggleIcon')
+  const feelingPanel = document.getElementById('feelingPanel')
+  const chipsContainer = document.getElementById('feelingChips')
 
-  const checkReady = () => {
-    const isCustom = select.value === '__custom__'
-    const feeling  = isCustom ? customInput.value.trim() : select.value
-    postBtn.disabled = !currentUser || !feeling
+  const PRESET_FEELINGS = [
+    'Awesome 🤩','Epic ⚡','Excited 🎉','Happy 😊','Fabulous 💅',
+    'Musical 🎵','Creative 🎨','Dramatic 🎭','Inspired ✨','In Love 💕',
+    'Silly 🤪','Rebellious 😈','Legendary 🏆','Caffeinated ☕','Hungry 🍕',
+    'Confused 🤔','Nervous 😬','Annoyed 🙄','Tired 😪','Sad 😢',
+    'Angry 😤','Bored 😴','Grateful 🙏','Hyped 🔥','Chill 😌',
+    'Nostalgic 🌙','Proud 🏅','Salty 🧂','Unbothered 😎'
+  ]
+
+  let selectedFeeling = ''
+
+  const updateToggleBtn = () => {
+    if (selectedFeeling) {
+      toggleLabel.textContent = `Feeling: ${selectedFeeling}`
+      toggleIcon.textContent  = selectedFeeling.match(/\p{Emoji}/u)?.[0] || '😊'
+      toggleBtn.classList.add('active')
+    } else {
+      toggleLabel.textContent = 'Add a feeling…'
+      toggleIcon.textContent  = '😊'
+      toggleBtn.classList.remove('active')
+    }
+    // sync hidden select for post submission
+    select.innerHTML = `<option value="${selectedFeeling}">${selectedFeeling}</option>`
+    select.value = selectedFeeling
   }
 
+  const setFeeling = (val) => {
+    selectedFeeling = val
+    // Update chips highlight
+    chipsContainer.querySelectorAll('.feeling-chip').forEach(c => {
+      c.classList.toggle('selected', c.dataset.val === val)
+    })
+    // Clear custom if a preset was chosen
+    if (val && PRESET_FEELINGS.includes(val)) customInput.value = ''
+    updateToggleBtn()
+    postBtn.disabled = !currentUser || !selectedFeeling
+  }
+
+  // Build chips
+  PRESET_FEELINGS.forEach(f => {
+    const chip = document.createElement('button')
+    chip.type = 'button'
+    chip.className = 'feeling-chip'
+    chip.textContent = f
+    chip.dataset.val = f
+    chip.addEventListener('click', () => {
+      setFeeling(selectedFeeling === f ? '' : f)  // toggle off if already selected
+    })
+    chipsContainer.appendChild(chip)
+  })
+
+  // Toggle panel open/closed
+  toggleBtn.addEventListener('click', (e) => {
+    e.stopPropagation()
+    const isOpen = !feelingPanel.classList.contains('hidden')
+    feelingPanel.classList.toggle('hidden', isOpen)
+    toggleBtn.classList.toggle('open', !isOpen)
+  })
+  document.addEventListener('click', (e) => {
+    if (!feelingPanel.contains(e.target) && e.target !== toggleBtn) {
+      feelingPanel.classList.add('hidden')
+      toggleBtn.classList.remove('open')
+    }
+  })
+
+  // Custom input
+  customInput.addEventListener('input', () => {
+    const val = customInput.value.trim()
+    if (val) {
+      setFeeling(val)
+      chipsContainer.querySelectorAll('.feeling-chip').forEach(c => c.classList.remove('selected'))
+    } else if (!PRESET_FEELINGS.includes(selectedFeeling)) {
+      setFeeling('')
+    }
+  })
+
   // Emoji picker
-  const EMOJIS = ['😊','😂','😍','🥰','😎','🤩','🥳','😜','🤪','😴','😢','😤','😬','😅','🤔','😈','🤓','👑','💅','⚡','✨','🌟','💕','💀','🔥','🎉','🎭','🎵','🎨','🏆','🍕','☕','🌈','🫶','💪','👀','😏','🤭','🫠','🙃']
+  const EMOJIS = ['😊','😂','😍','🥰','😎','🤩','🥳','😜','🤪','😴','😢','😤','😬','😅','🤔','😈','🤓','👑','💅','⚡','✨','🌟','💕','💀','🔥','🎉','🎭','🎵','🎨','🏆','🍕','☕','🌈','🫶','💪','👀','😏','🤭','🫠','🙃','🎶','🌸','💫','🤑','😇','🥹','😭','🫡']
   emojiPicker.innerHTML = EMOJIS.map(e => `<button type="button" class="emoji-opt">${e}</button>`).join('')
   emojiPicker.querySelectorAll('.emoji-opt').forEach(btn => {
     btn.addEventListener('click', e => {
       e.stopPropagation()
       customInput.value += btn.textContent
+      customInput.dispatchEvent(new Event('input'))
       emojiPicker.classList.add('hidden')
       customInput.focus()
-      checkReady()
     })
   })
   emojiBtn.addEventListener('click', e => { e.stopPropagation(); emojiPicker.classList.toggle('hidden') })
   document.addEventListener('click', () => emojiPicker.classList.add('hidden'))
-  customInput.addEventListener('input', checkReady)
 
-  select.addEventListener('change', () => {
-    const isCustom = select.value === '__custom__'
-    customRow.classList.toggle('hidden', !isCustom)
-    if (isCustom) customInput.focus()
-    checkReady()
-  })
+  const checkReady = () => {
+    postBtn.disabled = !currentUser || !selectedFeeling
+  }
 
   // Post privacy toggle — cycle: public → followers → close friends → public
   const privacyStates = [
@@ -398,11 +468,9 @@ function setupComposer() {
 
 async function submitPost() {
   if (!currentUser) return
-  const isCustom = document.getElementById('feelingSelect').value === '__custom__'
-  const feeling  = isCustom
-    ? document.getElementById('customFeelingInput').value.trim()
-    : document.getElementById('feelingSelect').value
-  const content  = document.getElementById('composerInput').value.trim()
+  // The hidden select is kept in sync by setFeeling(); custom input also syncs it
+  const feeling = document.getElementById('feelingSelect').value.trim()
+  const content = document.getElementById('composerInput').value.trim()
   if (!feeling) return
 
   const postBtn = document.getElementById('postBtn')
@@ -436,9 +504,14 @@ async function submitPost() {
   postBtn.textContent = 'Spark it!'
 
   if (!error) {
+    // Reset feeling picker
     document.getElementById('feelingSelect').value = ''
-    document.getElementById('customFeelingRow').classList.add('hidden')
     document.getElementById('customFeelingInput').value = ''
+    document.getElementById('feelingPanel').classList.add('hidden')
+    document.getElementById('feelingToggleBtn').classList.remove('active', 'open')
+    document.getElementById('feelingToggleLabel').textContent = 'Add a feeling…'
+    document.getElementById('feelingToggleIcon').textContent  = '😊'
+    document.querySelectorAll('.feeling-chip').forEach(c => c.classList.remove('selected'))
     document.getElementById('postPrivacyBtn').textContent = '🌍 Public'
     postPrivacy = 'public'
     const pb = document.getElementById('postPrivacyBtn')

@@ -125,39 +125,31 @@
           <div class="composer-top">
             <div class="composer-avatar avatar-circle" id="composerAvatar">?</div>
             <div class="composer-fields">
-              <select class="feeling-select" id="feelingSelect">
-                <option value="">Pick a feeling…</option>
-                <option value="Awesome 🤩">Awesome 🤩</option>
-                <option value="Epic ⚡">Epic ⚡</option>
-                <option value="Excited 🎉">Excited 🎉</option>
-                <option value="Happy 😊">Happy 😊</option>
-                <option value="Fabulous 💅">Fabulous 💅</option>
-                <option value="Musical 🎵">Musical 🎵</option>
-                <option value="Creative 🎨">Creative 🎨</option>
-                <option value="Dramatic 🎭">Dramatic 🎭</option>
-                <option value="Inspired ✨">Inspired ✨</option>
-                <option value="In Love 💕">In Love 💕</option>
-                <option value="Silly 🤪">Silly 🤪</option>
-                <option value="Rebellious 😈">Rebellious 😈</option>
-                <option value="Legendary 🏆">Legendary 🏆</option>
-                <option value="Caffeinated ☕">Caffeinated ☕</option>
-                <option value="Hungry 🍕">Hungry 🍕</option>
-                <option value="Confused 🤔">Confused 🤔</option>
-                <option value="Nervous 😬">Nervous 😬</option>
-                <option value="Annoyed 🙄">Annoyed 🙄</option>
-                <option value="Tired 😪">Tired 😪</option>
-                <option value="Sad 😢">Sad 😢</option>
-                <option value="Angry 😤">Angry 😤</option>
-                <option value="Bored 😴">Bored 😴</option>
-                <option value="__custom__">✏️ Custom feeling…</option>
-              </select>
-              <div class="custom-feeling-row hidden" id="customFeelingRow">
-                <input type="text" id="customFeelingInput" class="custom-feeling-input" placeholder="e.g. Obsessed" maxlength="40" />
-                <div class="emoji-picker-wrap">
-                  <button type="button" class="emoji-picker-btn" id="emojiPickerBtn" title="Pick an emoji">😊</button>
-                  <div class="emoji-picker hidden" id="emojiPicker"></div>
+              <!-- Feeling toggle button -->
+              <button type="button" class="feeling-toggle-btn" id="feelingToggleBtn">
+                <span id="feelingToggleIcon">😊</span>
+                <span id="feelingToggleLabel">Add a feeling…</span>
+                <svg id="feelingToggleChevron" width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              </button>
+
+              <!-- Feeling picker panel (hidden by default) -->
+              <div class="feeling-panel hidden" id="feelingPanel">
+                <!-- Preset chips -->
+                <div class="feeling-chips" id="feelingChips"></div>
+                <!-- Custom row -->
+                <div class="feeling-custom-row">
+                  <input type="text" id="customFeelingInput" class="custom-feeling-input" placeholder="✏️  Type your own feeling…" maxlength="40" />
+                  <div class="emoji-picker-wrap">
+                    <button type="button" class="emoji-picker-btn" id="emojiPickerBtn" title="Add an emoji">😊</button>
+                    <div class="emoji-picker hidden" id="emojiPicker"></div>
+                  </div>
                 </div>
               </div>
+
+              <!-- Hidden select kept for JS compatibility -->
+              <select class="feeling-select hidden" id="feelingSelect" aria-hidden="true">
+                <option value=""></option>
+              </select>
               <textarea class="composer-input" id="composerInput"
                 placeholder="Tell everyone why…" maxlength="280"></textarea>
             </div>
@@ -407,6 +399,21 @@
           <div class="about-logo">The <span>Spark</span> ⚡</div>
           <p class="about-tagline">Social media for your generation.</p>
         </div>
+        <div class="about-app card">
+          <div class="about-app-header">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+            <span>Get the iOS App</span>
+          </div>
+          <p class="about-app-text">
+            The Spark is currently in beta testing on iOS. Apple users can download it now via TestFlight — no App Store required.
+          </p>
+          <a class="about-app-btn" href="https://testflight.apple.com/join/xFh6zYrA" target="_blank" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+            Join Beta on TestFlight
+          </a>
+          <p class="about-app-note">Requires iOS 16 or later.</p>
+        </div>
+
         <div class="about-footer card">
           <p class="about-creator-text">
             This site was created by <strong>Paige Dube</strong>, a University of Vermont Data Science student.
