@@ -280,16 +280,49 @@ body {
 .composer-avatar { width: 42px; height: 42px; font-size: 1rem; border: 2px solid var(--purple-light); }
 .composer-fields { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 
-.feeling-select {
-  width: 100%; background: rgba(139,92,246,0.1);
-  border: 1px solid var(--purple); border-radius: var(--radius-sm);
-  color: var(--text); font-family: 'Nunito', sans-serif; font-size: 0.95rem; font-weight: 700;
-  padding: 9px 32px 9px 12px; appearance: none; cursor: pointer;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238B5CF6' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat; background-position: right 12px center;
+.feeling-select { display: none; }
+
+/* Feeling toggle button */
+.feeling-toggle-btn {
+  display: flex; align-items: center; gap: 7px;
+  background: rgba(139,92,246,0.08); border: 1px solid var(--card-border);
+  border-radius: 20px; color: var(--text-muted);
+  font-family: 'Nunito', sans-serif; font-size: 0.88rem; font-weight: 700;
+  padding: 7px 13px; cursor: pointer; transition: all 0.18s;
+  width: 100%;
 }
-.feeling-select:focus { outline: none; border-color: var(--neon-pink); box-shadow: 0 0 0 2px rgba(255,16,240,0.15); }
-.feeling-select option { background: #12121F; color: var(--text); }
+.feeling-toggle-btn:hover { border-color: var(--purple); color: var(--text); }
+.feeling-toggle-btn.active { border-color: var(--purple); color: var(--purple); background: rgba(139,92,246,0.15); }
+#feelingToggleChevron { margin-left: auto; transition: transform 0.2s; flex-shrink: 0; }
+.feeling-toggle-btn.open #feelingToggleChevron { transform: rotate(180deg); }
+
+/* Feeling panel */
+.feeling-panel {
+  background: var(--card-bg); border: 1px solid var(--card-border);
+  border-radius: var(--radius-sm); padding: 12px;
+  margin-top: 4px;
+}
+.feeling-panel.hidden { display: none; }
+
+/* Chips grid */
+.feeling-chips {
+  display: flex; flex-wrap: wrap; gap: 7px;
+  margin-bottom: 10px;
+}
+.feeling-chip {
+  background: rgba(255,255,255,0.05); border: 1px solid var(--card-border);
+  border-radius: 20px; padding: 5px 12px;
+  font-family: 'Nunito', sans-serif; font-size: 0.82rem; font-weight: 700;
+  color: var(--text); cursor: pointer; transition: all 0.15s; white-space: nowrap;
+}
+.feeling-chip:hover { border-color: var(--purple); background: rgba(139,92,246,0.15); }
+.feeling-chip.selected { background: var(--purple); border-color: var(--purple); color: #fff; }
+
+/* Custom feeling row inside panel */
+.feeling-custom-row {
+  display: flex; gap: 8px; align-items: center;
+  border-top: 1px solid var(--card-border); padding-top: 10px;
+}
 
 .composer-input {
   width: 100%; background: rgba(255,255,255,0.04); border: 1px solid var(--card-border);
@@ -765,10 +798,7 @@ body {
 .post-toggle-privacy.is-private { color: var(--purple-light); border-color: var(--purple); }
 
 /* ===== CUSTOM FEELING & EMOJI PICKER ===== */
-.custom-feeling-row {
-  display: flex; align-items: center; gap: 8px;
-  margin-top: 6px;
-}
+.custom-feeling-row { display: none; } /* replaced by .feeling-custom-row */
 .custom-feeling-input {
   flex: 1; background: rgba(255,255,255,0.06); border: 1.5px solid var(--card-border);
   border-radius: var(--radius-sm); color: var(--text);
@@ -791,7 +821,8 @@ body {
   background: var(--card-bg); border: 1.5px solid var(--card-border);
   border-radius: var(--radius-sm); padding: 10px;
   display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px;
-  width: 260px; z-index: 300;
+  width: min(260px, 92vw); max-height: 200px; overflow-y: auto;
+  z-index: 300;
   box-shadow: 0 8px 32px rgba(0,0,0,0.5);
 }
 .emoji-opt {
@@ -1240,6 +1271,31 @@ body {
 .about-icon    { font-size: 2rem; margin-bottom: 10px; }
 .about-card h3 { font-size: 1rem; font-weight: 800; margin-bottom: 8px; color: var(--purple-light); }
 .about-card p  { font-size: 0.86rem; line-height: 1.6; color: var(--text-muted); }
+.about-app {
+  padding: 28px 28px 24px;
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+  text-align: center;
+  border: 1.5px solid rgba(139,92,246,0.3);
+  background: linear-gradient(135deg, rgba(139,92,246,0.08), rgba(236,72,153,0.05));
+}
+.about-app-header {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 1.1rem; font-weight: 800; color: var(--purple-light);
+}
+.about-app-text {
+  color: var(--text-muted); font-size: 0.92rem; line-height: 1.6; max-width: 480px;
+}
+.about-app-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 11px 26px; border-radius: 24px;
+  background: linear-gradient(135deg, var(--purple), var(--neon-pink));
+  color: #fff; font-weight: 700; font-size: 0.95rem;
+  text-decoration: none; transition: opacity 0.2s, transform 0.2s;
+  box-shadow: 0 4px 18px rgba(139,92,246,0.35);
+}
+.about-app-btn:hover { opacity: 0.88; transform: translateY(-2px); }
+.about-app-note { font-size: 0.78rem; color: var(--text-muted); }
+
 .about-footer  { text-align: center; padding: 28px 24px; display: flex; flex-direction: column; align-items: center; gap: 18px; }
 .about-creator-text {
   color: var(--text-muted); font-size: 0.92rem; line-height: 1.7;
