@@ -1612,19 +1612,50 @@ async function openFollowsModal(type) {
 }
 
 // ===== TOGGLE POST PRIVACY =====
+// Applies label + classes to the privacy toggle button
+function applyPrivacyToggle(btn, state) {
+  btn.dataset.privacyState = state
+  btn.classList.remove('is-private', 'is-close-friends')
+  if (state === 'close_friends') {
+    btn.textContent = '⭐ Close Friends'
+    btn.classList.add('is-close-friends')
+  } else if (state === 'private') {
+    btn.textContent = '🔒 Followers Only'
+    btn.classList.add('is-private')
+  } else {
+    btn.textContent = '🌍 Public'
+  }
+}
+
 async function togglePostPrivacy(postId, btn, article) {
   if (!currentUser) return
-  const nowPrivate = btn.dataset.private === 'true'
-  const newPrivate = !nowPrivate
+  const states = ['public', 'private', 'close_friends']
+  const cur    = btn.dataset.privacyState || 'public'
+  const next   = states[(states.indexOf(cur) + 1) % states.length]
+
   const { error } = await supabase.from('posts')
-    .update({ is_private: newPrivate })
+    .update({
+      is_private:       next === 'private',
+      is_close_friends: next === 'close_friends'
+    })
     .eq('id', postId).eq('user_id', currentUser.id)
   if (error) return
-  btn.dataset.private = String(newPrivate)
-  btn.textContent = newPrivate ? '🔒 Private' : '🌍 Public'
-  btn.classList.toggle('is-private', newPrivate)
+
+  applyPrivacyToggle(btn, next)
+
+  // Update badge
   const badge = article.querySelector('.post-private-badge')
-  if (badge) badge.classList.toggle('hidden', !newPrivate)
+  if (badge) {
+    if (next === 'close_friends') {
+      badge.classList.remove('hidden'); badge.classList.add('cf')
+      badge.textContent = '⭐ Close Friends'
+    } else if (next === 'private') {
+      badge.classList.remove('hidden', 'cf')
+      badge.textContent = '🔒 Followers Only'
+    } else {
+      badge.classList.add('hidden'); badge.classList.remove('cf')
+    }
+  }
 }
 
 // ===== DELETE POST =====
@@ -1705,23 +1736,22 @@ function renderPost(post, showDelete = false) {
 
     const privBtn = el.querySelector('.post-toggle-privacy')
     privBtn.classList.remove('hidden')
-    privBtn.textContent = post.is_private ? '🔒 Private' : '🌍 Public'
-    privBtn.dataset.private = String(!!post.is_private)
-    if (post.is_private) privBtn.classList.add('is-private')
+    // Determine initial state
+    const initState = post.is_close_friends ? 'close_friends' : post.is_private ? 'private' : 'public'
+    applyPrivacyToggle(privBtn, initState)
     privBtn.addEventListener('click', () => togglePostPrivacy(post.id, privBtn, article))
   }
 
-  // Privacy badge
+  // Privacy badge (visible to all viewers)
   const badge = el.querySelector('.post-private-badge')
   if (badge) {
     if (post.is_close_friends) {
       badge.classList.remove('hidden')
+      badge.classList.add('cf')
       badge.textContent = '⭐ Close Friends'
-      badge.style.background = 'rgba(245,158,11,0.15)'
-      badge.style.color = '#f59e0b'
-      badge.style.borderColor = 'rgba(245,158,11,0.3)'
     } else if (post.is_private) {
       badge.classList.remove('hidden')
+      badge.textContent = '🔒 Followers Only'
     }
   }
 

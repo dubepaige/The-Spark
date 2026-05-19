@@ -795,7 +795,8 @@ body {
   font-family: 'Nunito', sans-serif; font-weight: 700; margin-left: auto;
 }
 .post-toggle-privacy:hover { border-color: var(--purple); color: var(--purple-light); }
-.post-toggle-privacy.is-private { color: var(--purple-light); border-color: var(--purple); }
+.post-toggle-privacy.is-private { color: var(--purple-light); border-color: var(--purple); background: rgba(139,92,246,0.08); }
+.post-toggle-privacy.is-close-friends { color: #f59e0b; border-color: #f59e0b; background: rgba(245,158,11,0.08); }
 
 /* ===== CUSTOM FEELING & EMOJI PICKER ===== */
 .custom-feeling-row { display: none; } /* replaced by .feeling-custom-row */
@@ -843,8 +844,17 @@ body {
 
 /* ===== POST PRIVATE BADGE ===== */
 .post-private-badge {
-  font-size: 0.75rem; margin-left: auto; color: var(--purple-light);
-  opacity: 0.8; flex-shrink: 0; line-height: 1;
+  font-size: 0.73rem; font-weight: 700; font-family: 'Nunito', sans-serif;
+  flex-shrink: 0; line-height: 1;
+  padding: 3px 8px; border-radius: 20px;
+  border: 1px solid rgba(139,92,246,0.35);
+  color: var(--purple-light);
+  background: rgba(139,92,246,0.1);
+}
+.post-private-badge.cf {
+  color: #f59e0b;
+  border-color: rgba(245,158,11,0.4);
+  background: rgba(245,158,11,0.1);
 }
 
 /* ===== DM BUTTON ===== */
