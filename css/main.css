@@ -789,14 +789,15 @@ body {
 
 /* ===== POST PRIVACY TOGGLE (on post card) ===== */
 .post-toggle-privacy {
-  background: none; border: 1px solid var(--card-border);
-  border-radius: 12px; padding: 2px 8px; font-size: 0.72rem;
+  background: rgba(255,255,255,0.05); border: 1.5px solid var(--card-border);
+  border-radius: 20px; padding: 4px 12px; font-size: 0.75rem;
   cursor: pointer; color: var(--text-muted); transition: all 0.2s;
   font-family: 'Nunito', sans-serif; font-weight: 700; margin-left: auto;
+  white-space: nowrap;
 }
-.post-toggle-privacy:hover { border-color: var(--purple); color: var(--purple-light); }
-.post-toggle-privacy.is-private { color: var(--purple-light); border-color: var(--purple); background: rgba(139,92,246,0.08); }
-.post-toggle-privacy.is-close-friends { color: #f59e0b; border-color: #f59e0b; background: rgba(245,158,11,0.08); }
+.post-toggle-privacy:hover { border-color: var(--purple); color: var(--purple-light); background: rgba(139,92,246,0.07); }
+.post-toggle-privacy.is-private { color: var(--purple-light); border-color: var(--purple); background: rgba(139,92,246,0.12); }
+.post-toggle-privacy.is-close-friends { color: #f59e0b; border-color: #f59e0b; background: rgba(245,158,11,0.12); }
 
 /* ===== CUSTOM FEELING & EMOJI PICKER ===== */
 .custom-feeling-row { display: none; } /* replaced by .feeling-custom-row */
@@ -1067,38 +1068,51 @@ body {
 
 /* ===== CLOSE FRIENDS ===== */
 .close-friends-card { margin-bottom: 16px; }
-.close-friends-title { font-weight: 800; font-size: 0.95rem; margin-bottom: 4px; }
-.close-friends-hint { color: var(--text-muted); font-size: 0.78rem; margin-bottom: 12px; }
-.close-friends-add-row { display: flex; gap: 8px; margin-bottom: 12px; }
+.close-friends-title {
+  font-weight: 800; font-size: 1rem; margin-bottom: 6px;
+  font-family: 'Nunito', sans-serif; color: var(--text);
+  display: flex; align-items: center; gap: 6px;
+}
+.close-friends-hint {
+  color: var(--text-muted); font-size: 0.8rem; margin-bottom: 14px;
+  font-family: 'Nunito', sans-serif; line-height: 1.5;
+}
+.close-friends-add-row { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; }
 .close-friends-input {
-  flex: 1; background: var(--input-bg); border: 1px solid var(--border);
-  border-radius: var(--radius-sm); padding: 8px 12px; color: var(--text);
-  font-size: 0.85rem;
+  flex: 1; background: rgba(255,255,255,0.05);
+  border: 1.5px solid var(--card-border);
+  border-radius: 24px; padding: 9px 16px; color: var(--text);
+  font-size: 0.88rem; font-family: 'Nunito', sans-serif; font-weight: 600;
+  transition: border-color 0.18s;
 }
-.close-friends-input:focus { outline: none; border-color: var(--accent); }
+.close-friends-input::placeholder { color: var(--text-muted); }
+.close-friends-input:focus { outline: none; border-color: #f59e0b; }
 .btn-cf-add {
-  background: var(--accent); color: #fff; border: none;
-  border-radius: var(--radius-sm); padding: 8px 14px;
-  font-size: 0.82rem; font-weight: 700; cursor: pointer;
-  white-space: nowrap;
+  background: linear-gradient(135deg, #f59e0b, #f97316);
+  color: #fff; border: none; border-radius: 24px;
+  padding: 9px 20px; font-size: 0.86rem; font-weight: 800;
+  font-family: 'Nunito', sans-serif; cursor: pointer;
+  white-space: nowrap; transition: opacity 0.18s, transform 0.18s;
+  box-shadow: 0 2px 12px rgba(245,158,11,0.3);
 }
-.btn-cf-add:hover { opacity: 0.85; }
+.btn-cf-add:hover { opacity: 0.88; transform: translateY(-1px); }
 .cf-item {
   display: flex; align-items: center; gap: 10px;
-  padding: 7px 0; border-bottom: 1px solid var(--border);
+  padding: 9px 0; border-bottom: 1px solid var(--card-border);
 }
 .cf-item:last-child { border-bottom: none; }
 .cf-info { flex: 1; min-width: 0; }
-.cf-name   { font-weight: 700; font-size: 0.86rem; }
-.cf-handle { color: var(--text-muted); font-size: 0.76rem; }
+.cf-name   { font-weight: 700; font-size: 0.88rem; font-family: 'Nunito', sans-serif; color: var(--text); }
+.cf-handle { color: var(--text-muted); font-size: 0.77rem; font-family: 'Nunito', sans-serif; }
 .btn-cf-remove {
-  background: transparent; border: 1px solid var(--border);
-  border-radius: var(--radius-sm); color: var(--text-muted);
-  font-size: 0.75rem; padding: 3px 9px; cursor: pointer;
+  background: transparent; border: 1.5px solid var(--card-border);
+  border-radius: 20px; color: var(--text-muted);
+  font-size: 0.76rem; font-weight: 700; font-family: 'Nunito', sans-serif;
+  padding: 4px 12px; cursor: pointer; transition: all 0.18s;
 }
-.btn-cf-remove:hover { border-color: #f87171; color: #f87171; }
-.cf-empty { color: var(--text-muted); font-size: 0.82rem; padding: 4px 0; }
-.cf-err   { color: #f87171; font-size: 0.8rem; margin-top: 4px; }
+.btn-cf-remove:hover { border-color: #f87171; color: #f87171; background: rgba(248,113,113,0.08); }
+.cf-empty { color: var(--text-muted); font-size: 0.83rem; padding: 8px 0; font-family: 'Nunito', sans-serif; font-style: italic; }
+.cf-err   { color: #f87171; font-size: 0.8rem; margin-top: 6px; font-family: 'Nunito', sans-serif; }
 
 /* Privacy badge in composer */
 .composer-privacy-btn {
