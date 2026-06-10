@@ -12,6 +12,7 @@ struct ProfileView: View {
     @State private var showContact       = false
     @State private var showDeleteConfirm = false
     @State private var deleteError: String?
+    @State private var showAccounts      = false
     @State private var followRequests: [FollowRequest] = []
     @State private var followerCount  = 0
     @State private var followingCount = 0
@@ -53,11 +54,14 @@ struct ProfileView: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
-                        Button { showEdit  = true } label: { Label("Edit Profile", systemImage: "pencil") }
-                        Button { showStats = true } label: { Label("My Stats",     systemImage: "chart.bar.fill") }
-                        Button { showTunes = true } label: { Label("Set Tune",     systemImage: "music.note") }
-                        Button { showGames   = true } label: { Label("Games 🎮",      systemImage: "gamecontroller.fill") }
-                        Button { showContact = true } label: { Label("Contact Us ⚡", systemImage: "envelope.fill") }
+                        Button { showEdit     = true } label: { Label("Edit Profile",   systemImage: "pencil") }
+                        Button { showStats   = true } label: { Label("My Stats",       systemImage: "chart.bar.fill") }
+                        Button { showTunes   = true } label: { Label("Set Tune",       systemImage: "music.note") }
+                        Button { showGames   = true } label: { Label("Games 🎮",        systemImage: "gamecontroller.fill") }
+                        Button { showContact = true } label: { Label("Contact Us ⚡",   systemImage: "envelope.fill") }
+                        Button { showAccounts = true } label: {
+                            Label("Switch Account", systemImage: "person.2.circle")
+                        }
                         if user?.isPrivate == true {
                             Button { showReqs = true } label: {
                                 Label("Follow Requests\(followRequests.isEmpty ? "" : " (\(followRequests.count))")",
@@ -80,8 +84,9 @@ struct ProfileView: View {
             .sheet(isPresented: $showTunes) { TunesPickerView() }
             .sheet(isPresented: $showStats) { StatsView() }
             .sheet(isPresented: $showReqs)  { FollowRequestsView(requests: $followRequests) }
-            .sheet(isPresented: $showGames)   { NavigationStack { GamesView() } }
-            .sheet(isPresented: $showContact) { ContactView() }
+            .sheet(isPresented: $showGames)    { NavigationStack { GamesView() } }
+            .sheet(isPresented: $showContact)  { ContactView() }
+            .sheet(isPresented: $showAccounts) { AccountSwitcherView() }
             .alert("Delete Account", isPresented: $showDeleteConfirm) {
                 Button("Cancel", role: .cancel) { }
                 Button("Delete Forever", role: .destructive) { deleteAccount() }
